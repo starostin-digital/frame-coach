@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Frame Coach</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gabarito:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#000; --ink:#f5f3ee; --muted:#9c9a94; --advice:#ffc94d; --good:#6ee7a8; --bad:#ff7a6b;
+  color-scheme: dark;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --bg:#000; --ink:#f5f3ee; } }
+:root[data-theme="dark"]{ --bg:#000; --ink:#f5f3ee; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Gabarito",system-ui,-apple-system,"Segoe UI",sans-serif;
+  display:flex;flex-direction:column;overflow:hidden;-webkit-user-select:none;user-select:none}
+#finder{position:relative;width:100%;max-width:100%;aspect-ratio:3/4;max-height:calc(100% - 190px);margin:0 auto;
+  background:#111;overflow:hidden;flex:0 0 auto}
+#finder video,#finder canvas,#preview{position:absolute;inset:0;width:100%;height:100%}
+#finder video{object-fit:cover}
+#overlay{pointer-events:none}
+#frame{position:absolute;inset:0;border:3px solid transparent;transition:border-color .25s;pointer-events:none}
+#frame.good{border-color:var(--good)}
+#preview{object-fit:cover;display:none;-webkit-user-select:auto;user-select:auto;-webkit-touch-callout:default}
+#flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+#flash.on{animation:fl .35s ease-out}
+@keyframes fl{0%{opacity:.85}100%{opacity:0}}
+#bar{flex:1 1 auto;display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;padding:8px 20px 12px;min-height:190px}
+#tip{font-size:clamp(20px,5.6vw,26px);font-weight:700;line-height:1.2;text-align:center;max-width:22ch;min-height:2.4em;
+  display:flex;align-items:center;justify-content:center;color:var(--muted);transition:color .2s}
+#tip.advice{color:var(--advice)} #tip.good{color:var(--good)} #tip.bad{color:var(--bad)}
+#tip small{display:block;font-weight:500;font-size:.62em;color:var(--muted);margin-top:4px}
+.row{display:flex;gap:14px;align-items:center;justify-content:center;width:100%}
+#shutter{width:76px;height:76px;border-radius:50%;border:4px solid var(--ink);background:transparent;padding:5px;cursor:pointer}
+#shutter::after{content:"";display:block;width:100%;height:100%;border-radius:50%;background:var(--ink);transition:transform .1s}
+#shutter:active::after{transform:scale(.88)}
+#shutter.good{border-color:var(--good)} #shutter.good::after{background:var(--good)}
+#shutter:disabled{opacity:.35}
+.btn{font:inherit;font-weight:700;font-size:17px;padding:14px 22px;border-radius:999px;border:2px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer}
+.btn.primary{background:var(--ink);color:#000}
+button:focus-visible{outline:3px solid var(--advice);outline-offset:3px}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion: reduce){#flash.on{animation:none}#frame,#tip{transition:none}}
+</style>
+</head>
+<body>
+<div id="finder">
+  <video id="video" playsinline muted autoplay></video>
+  <canvas id="overlay"></canvas>
+  <img id="preview" alt="Your photo">
+  <div id="frame"></div>
+  <div id="flash"></div>
+</div>
+<div id="bar">
+  <div id="tip">Starting the camera…</div>
+  <div class="row" id="camRow"><button id="shutter" aria-label="Take photo" disabled></button></div>
+  <div class="row" id="shotRow" hidden>
+    <button class="btn" id="retake">Retake</button>
+    <button class="btn primary" id="save">Save photo</button>
+  </div>
+  <div class="row" id="errRow" hidden><button class="btn" id="retry">Try again</button></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const video=$('video'), overlay=$('overlay'), octx=overlay.getContext('2d');
+const tipEl=$('tip'), frameEl=$('frame'), shutter=$('shutter');
+const small=document.createElement('canvas'); small.width=small.height=192;
+const sctx=small.getContext('2d',{willReadFrequently:true});
+let model=null, running=false, smooth=null, frozen=false;
+
+// ---------- camera ----------
+async function startCamera(){
+  setTip('Starting the camera…','');
+  $('errRow').hidden=true;
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:false,
+      video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1440}}});
+    video.srcObject=stream; await video.play();
+    if(!model) await loadModel();
+    shutter.disabled=false;
+    if(!running){running=true;requestAnimationFrame(loop);}
+  }catch(e){
+    console.error(e);
+    setTip('Camera is blocked<small>Allow camera access for this page, then tap Try again.</small>','bad');
+    $('errRow').hidden=false;
+  }
+}
+$('retry').onclick=startCamera;
+
+async function loadModel(){
+  setTip('Loading the pose model…','');
+  model=await tf.loadGraphModel('https://raw.githubusercontent.com/vladmandic/human-models/main/models/movenet-lightning.json');
+  tf.tidy(()=>model.execute(tf.zeros([1,192,192,3],'int32'))); // warm-up
+}
+
+// visible part of the video (object-fit: cover), in video pixels
+function visibleRect(){
+  const vw=video.videoWidth, vh=video.videoHeight, W=overlay.clientWidth, H=overlay.clientHeight;
+  const s=Math.max(W/vw,H/vh), w=W/s, h=H/s;
+  return {x:(vw-w)/2,y:(vh-h)/2,w,h};
+}
+
+// ---------- pose ----------
+async function detect(){
+  const vw=video.videoWidth, vh=video.videoHeight, s=Math.max(vw,vh);
+  const dw=192*vw/s, dh=192*vh/s, dx=(192-dw)/2, dy=(192-dh)/2;
+  sctx.fillStyle='#000'; sctx.fillRect(0,0,192,192);
+  sctx.drawImage(video,dx,dy,dw,dh);
+  const out=tf.tidy(()=>model.execute(tf.browser.fromPixels(small).toInt().expandDims(0)));
+  const d=await out.data(); out.dispose();
+  const r=visibleRect(), kp=[];
+  for(let i=0;i<17;i++){
+    const py=(d[i*3]*192-dy)/dh*vh, px=(d[i*3+1]*192-dx)/dw*vw;
+    kp.push({x:(px-r.x)/r.w, y:(py-r.y)/r.h, s:d[i*3+2]});   // 0..1 = inside the visible frame
+  }
+  return kp;
+}
+
+// ---------- rules ----------
+// 0 nose 1-2 eyes 3-4 ears 5-6 shoulders 7-8 elbows 9-10 wrists 11-12 hips 13-14 knees 15-16 ankles
+const T=0.3;
+const ok=p=>p.s>T;
+const inF=p=>ok(p)&&p.x>=0&&p.x<=1&&p.y>=0&&p.y<=1;
+const mid=(a,b)=>ok(a)&&ok(b)?{x:(a.x+b.x)/2,y:(a.y+b.y)/2,s:Math.min(a.s,b.s)}:(ok(a)?a:(ok(b)?b:{x:0,y:0,s:0}));
+
+function judge(k){
+  const good=k.filter(ok).length;
+  const nose=k[0], sh=mid(k[5],k[6]), hip=mid(k[11],k[12]), knee=mid(k[13],k[14]), ank=mid(k[15],k[16]);
+  if(good<6||!ok(sh)) return {id:'none',text:'Point the camera at her',tone:''};
+
+  const headTop = ok(nose) ? nose.y-0.6*Math.max(sh.y-nose.y,0.02) : sh.y-0.25;
+  const cx = ok(hip)?(sh.x+hip.x)/2:sh.x;
+
+  if(cx<0.18) return {id:'left',text:'Turn the phone left<small>She’s at the edge of the frame</small>',tone:'advice'};
+  if(cx>0.82) return {id:'right',text:'Turn the phone right<small>She’s at the edge of the frame</small>',tone:'advice'};
+  if(ok(nose)&&headTop<0.0) return {id:'head',text:'Tilt up<small>The top of her head is cut off</small>',tone:'advice'};
+
+  const fullBody = inF(k[15])||inF(k[16]);
+  if(fullBody){
+    const bodyH=ank.y-headTop, foot=ank.y+0.05*bodyH;
+    if(foot>1.0) return {id:'feet',text:'Step back a little<small>Her feet are cut off</small>',tone:'advice'};
+    if(bodyH<0.55) return {id:'small',text:'Step closer<small>She’s too small in the frame</small>',tone:'advice'};
+    if(headTop>0.15&&foot<0.93) return {id:'headroom',text:'Tilt down<small>Too much empty space above her</small>',tone:'advice'};
+    if(ok(hip)){
+      const legRatio=(ank.y-hip.y)/Math.max(hip.y-headTop,0.01);
+      if(legRatio<0.88) return {id:'low',text:'Lower the phone to her waist<small>Her legs will look longer</small>',tone:'advice'};
+    }
+    return {id:'ok',text:'Looks great. Take it!',tone:'good'};
+  }
+  // not full body: avoid cropping at joints
+  if(ok(knee)&&knee.y>0.86&&knee.y<1.04) return {id:'knee',text:'Don’t crop at the knees<small>Step back to show her feet, or get closer</small>',tone:'advice'};
+  if(ok(hip)&&hip.y>0.88&&hip.y<1.04&&!inF(knee)) return {id:'waist',text:'Don’t crop at the waist<small>Step back a bit, or get closer</small>',tone:'advice'};
+  if(headTop>0.2) return {id:'headroom2',text:'Tilt down<small>Too much empty space above her</small>',tone:'advice'};
+  return {id:'ok',text:'Looks great. Take it!',tone:'good'};
+}
+
+// ---------- ui ----------
+let shownId='', candId='', candCount=0;
+function setTip(html,tone){tipEl.innerHTML=html;tipEl.className=tone;}
+function show(v){
+  if(v.id===candId) candCount++; else {candId=v.id;candCount=1;}
+  if(v.id!==shownId && candCount>=8){
+    shownId=v.id; setTip(v.text,v.tone);
+    const g=v.tone==='good'; frameEl.classList.toggle('good',g); shutter.classList.toggle('good',g);
+  }
+}
+const BONES=[[5,6],[5,7],[7,9],[6,8],[8,10],[5,11],[6,12],[11,12],[11,13],[13,15],[12,14],[14,16]];
+function draw(k){
+  const W=overlay.clientWidth,H=overlay.clientHeight,dpr=devicePixelRatio||1;
+  if(overlay.width!==W*dpr){overlay.width=W*dpr;overlay.height=H*dpr;}
+  octx.setTransform(dpr,0,0,dpr,0,0); octx.clearRect(0,0,W,H);
+  octx.strokeStyle='rgba(255,255,255,.45)'; octx.lineWidth=2; octx.lineCap='round';
+  for(const [a,b] of BONES){ if(ok(k[a])&&ok(k[b])){octx.beginPath();octx.moveTo(k[a].x*W,k[a].y*H);octx.lineTo(k[b].x*W,k[b].y*H);octx.stroke();} }
+  octx.fillStyle='rgba(255,255,255,.8)';
+  for(const p of k) if(ok(p)){octx.beginPath();octx.arc(p.x*W,p.y*H,3,0,7);octx.fill();}
+}
+async function loop(){
+  if(!frozen && model && video.readyState>=2){
+    try{
+      const k=await detect();
+      smooth = smooth ? k.map((p,i)=>({x:smooth[i].x*0.5+p.x*0.5,y:smooth[i].y*0.5+p.y*0.5,s:smooth[i].s*0.5+p.s*0.5})) : k;
+      draw(smooth); show(judge(smooth));
+    }catch(e){console.error(e);}
+  }
+  requestAnimationFrame(loop);
+}
+
+// ---------- snap ----------
+let lastBlob=null, lastUrl=null;
+shutter.onclick=()=>{
+  const r=visibleRect(), c=document.createElement('canvas');
+  c.width=Math.round(r.w); c.height=Math.round(r.h);
+  c.getContext('2d').drawImage(video,r.x,r.y,r.w,r.h,0,0,c.width,c.height);
+  const f=$('flash'); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on');
+  c.toBlob(b=>{
+    lastBlob=b; if(lastUrl) URL.revokeObjectURL(lastUrl); lastUrl=URL.createObjectURL(b);
+    const p=$('preview'); p.src=lastUrl; p.style.display='block';
+    frozen=true; overlay.style.visibility='hidden'; frameEl.classList.remove('good');
+    $('camRow').hidden=true; $('shotRow').hidden=false;
+    setTip('Here’s your shot','');
+  },'image/jpeg',0.92);
+};
+$('retake').onclick=()=>{
+  $('preview').style.display='none'; frozen=false; overlay.style.visibility='visible';
+  $('shotRow').hidden=true; $('camRow').hidden=false; shownId=''; candCount=0;
+};
+let downloads=null;
+if(window.claude&&window.claude.use) window.claude.use('downloads').then(d=>downloads=d).catch(()=>{});
+$('save').onclick=async()=>{
+  if(!lastBlob) return;
+  if(!downloads){ setTip('Press and hold the photo to save it',''); return; }
+  try{
+    const ts=new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+    await downloads.save({filename:`photo-${ts}.jpg`,data:lastBlob});
+    setTip('Saved','good');
+  }catch(e){
+    if(e&&e.code==='declined') setTip('Not saved','');
+    else setTip('Press and hold the photo to save it','');
+  }
+};
+
+startCamera();
+})();
+</script>
+</body>
+</html>
