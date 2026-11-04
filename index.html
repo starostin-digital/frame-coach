@@ -3,83 +3,121 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
 <title>Frame Coach</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Gabarito:wght@500;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Arimo:wght@400;600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#000;--ink:#f5f3ee;--muted:#9c9a94;--advice:#ffc94d;--good:#6ee7a8;--bad:#ff7a6b;--ghost:#ffc94d;--sheet:#1c1c1e;
-  color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root{--ink:#fff;--muted:rgba(255,255,255,.72);--advice:#ffd60a;--good:#43a047;--goodLine:#6ee7a8;--bad:#ef5350;--hl:#8b5cf6;--sheet:#1c1c1e;
+  color-scheme:dark;box-sizing:border-box;--top:calc(env(safe-area-inset-top,0px) + 150px)}
 *,*::before,*::after{box-sizing:inherit}
-html,body{height:100%;margin:0}
-body{background:var(--bg);color:var(--ink);font-family:"Gabarito",system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;flex-direction:column;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
-#finder{position:relative;width:100%;aspect-ratio:3/4;max-height:calc(100% - 200px);margin:0 auto;background:#111;overflow:hidden;flex:0 0 auto;touch-action:manipulation}
-#finder video,#overlay,#preview{position:absolute;inset:0;width:100%;height:100%}
-#finder video{object-fit:cover;transform-origin:center}
-#overlay{pointer-events:none}
-#frame{position:absolute;inset:0;border:3px solid transparent;transition:border-color .25s;pointer-events:none}
-#frame.good{border-color:var(--good)}
-#preview{object-fit:cover;display:none;-webkit-user-select:auto;user-select:auto;-webkit-touch-callout:default}
+html,body{height:100%;margin:0;background:#000;overflow:hidden}
+body{color:var(--ink);font-family:"Arimo","Liberation Sans",Arial,sans-serif;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+#video{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
+#overlay{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+.dim{position:fixed;left:0;right:0;background:rgba(0,0,0,.38);pointer-events:none}
+#dimTop{top:0;height:var(--top)}
+#dimBot{top:calc(var(--top) + 100vw*4/3);bottom:0}
+#frame{position:fixed;left:0;width:100%;top:var(--top);aspect-ratio:3/4;border:1px solid rgba(255,255,255,.35)}
+#preview{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;-webkit-touch-callout:default}
 #flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
 #flash.on{animation:fl .35s ease-out}@keyframes fl{0%{opacity:.85}100%{opacity:0}}
-#zoom{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);display:flex;gap:6px;background:rgba(0,0,0,.35);padding:4px;border-radius:999px}
-#zoom button{font:inherit;font-weight:700;font-size:12px;width:34px;height:34px;border-radius:50%;border:0;background:rgba(40,40,40,.8);color:var(--ink);cursor:pointer}
-#zoom button.on{color:var(--advice);font-size:13px;width:40px;height:40px;margin:-3px 0}
-#focus{position:absolute;width:76px;height:76px;border:1.5px solid var(--advice);pointer-events:none;display:none}
-#expo{position:absolute;display:none;width:120px;height:28px;transform:rotate(-90deg);transform-origin:center;accent-color:var(--advice)}
-#bar{flex:1 1 auto;display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;padding:6px 20px 10px;min-height:200px}
-#tip{font-size:clamp(20px,5.6vw,26px);font-weight:700;line-height:1.2;text-align:center;max-width:22ch;min-height:2.4em;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);transition:color .2s}
-#tip.advice{color:var(--advice)}#tip.good{color:var(--good)}#tip.bad{color:var(--bad)}
-#tip small{display:block;font-weight:500;font-size:.62em;color:var(--muted);margin-top:4px}
-.row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;width:100%;max-width:360px}
-.side{width:56px;height:56px;border-radius:10px;border:2px solid #555;background:#222 center/cover no-repeat;cursor:pointer;color:var(--ink);font:inherit;font-weight:700;font-size:12px;padding:0}
-#refBtn{justify-self:start}#lastBtn{justify-self:end}
-#refBtn.active{border-color:var(--ghost)}
-#refBtn.empty{border-style:dashed;background:transparent;color:var(--muted)}
-#shutter{width:76px;height:76px;border-radius:50%;border:4px solid var(--ink);background:transparent;padding:5px;cursor:pointer}
-#shutter::after{content:"";display:block;width:100%;height:100%;border-radius:50%;background:var(--ink);transition:transform .1s}
+/* HUD */
+#hud{position:fixed;left:0;right:0;top:env(safe-area-inset-top,0px);height:150px;padding:14px 16px 0;pointer-events:none}
+#dot{position:absolute;left:18px;top:18px;width:30px;height:30px;border-radius:50%;background:var(--bad);transition:background .25s;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+#dot.good{background:var(--good)}
+#lines{margin:0 auto;max-width:calc(100% - 110px);text-align:center;font-size:17px;line-height:1.35;text-shadow:0 1px 5px rgba(0,0,0,.75);display:flex;flex-direction:column;gap:12px}
+.blk div{font-size:17px}
+.tag{font-size:12px;color:var(--muted);margin-left:6px}
+#msg{font-size:17px}
+/* inside frame */
+#pill{position:absolute;left:50%;top:14px;transform:translateX(-50%);display:flex;gap:6px;background:rgba(0,0,0,.3);padding:4px;border-radius:999px}
+#pill button{width:36px;height:36px;border-radius:50%;border:0;background:rgba(20,20,20,.65);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;position:relative}
+#pill button::before{content:"";position:absolute;inset:-4px}
+#pill button.on{background:var(--advice);color:#000}
+#toast{position:absolute;left:50%;top:64px;transform:translateX(-50%);background:rgba(0,0,0,.6);padding:7px 12px;border-radius:8px;font-size:13px;white-space:nowrap;opacity:0;transition:opacity .2s;pointer-events:none}
+#toast.on{opacity:1}
+#refBtn{position:absolute;left:16px;bottom:16px;width:92px;height:122px;border:2px solid #fff;border-radius:2px;background:rgba(0,0,0,.25) center/cover no-repeat;color:#fff;font:inherit;font-size:13px;cursor:pointer;padding:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+#refBtn.empty{border-style:dashed;border-color:rgba(255,255,255,.75)}
+#refBtn.flipped{transform:scaleX(-1)}
+#zoom{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);display:flex;gap:6px;align-items:center;background:rgba(0,0,0,.3);padding:4px;border-radius:999px}
+#zoom button{font:inherit;font-weight:600;font-size:12px;width:32px;height:32px;border-radius:50%;border:0;background:rgba(20,20,20,.65);color:#fff;cursor:pointer;padding:0}
+#zoom button.on{color:var(--advice);font-size:13px;width:38px;height:38px}
+/* bottom */
+#bottom{position:fixed;left:0;right:0;bottom:0;padding:0 24px calc(env(safe-area-inset-bottom,0px) + 22px);display:flex;flex-direction:column;align-items:center;gap:12px;pointer-events:none}
+#bottom>*{pointer-events:auto}
+.row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;width:100%;max-width:380px}
+#lastBtn{justify-self:start;width:56px;height:56px;border-radius:8px;border:0;background:#222 center/cover no-repeat;cursor:pointer;padding:0}
+#lastBtn.none{visibility:hidden}
+#flip{justify-self:end;width:56px;height:56px;border-radius:50%;border:0;background:rgba(80,80,80,.55);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+#shutter{width:84px;height:84px;border-radius:50%;border:4px solid #fff;background:transparent;padding:4px;cursor:pointer}
+#shutter::after{content:"";display:block;width:100%;height:100%;border-radius:50%;background:#fff;transition:transform .1s}
 #shutter:active::after{transform:scale(.88)}
-#shutter.good{border-color:var(--good)}#shutter.good::after{background:var(--good)}
 #shutter:disabled{opacity:.35}
-.btns{display:flex;gap:14px;justify-content:center}
-.btn{font:inherit;font-weight:700;font-size:17px;padding:14px 22px;border-radius:999px;border:2px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer}
-.btn.primary{background:var(--ink);color:#000}
-.btn[aria-pressed="true"]{border-color:var(--advice);color:var(--advice)}
-.btn.danger{border-color:var(--bad);color:var(--bad)}
-button:focus-visible{outline:3px solid var(--advice);outline-offset:3px}
+.btns{display:flex;gap:12px;justify-content:center}
+.btn{font:inherit;font-weight:600;font-size:16px;padding:13px 20px;border-radius:999px;border:0;background:rgba(80,80,80,.6);color:#fff;cursor:pointer}
+.btn.primary{background:#fff;color:#000}
+.btn[aria-pressed="true"]{background:var(--advice);color:#000}
+.btn.danger{background:transparent;color:var(--bad);box-shadow:inset 0 0 0 1.5px var(--bad)}
+button:focus-visible,textarea:focus-visible{outline:3px solid var(--advice);outline-offset:3px}
 [hidden]{display:none!important}
-/* reference sheet */
-#sheet{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;z-index:20}
-#sheetBox{background:var(--sheet);width:100%;border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px;max-height:92%}
+/* sheet */
+#sheet{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;z-index:20}
+#sheetBox{background:var(--sheet);width:100%;border-radius:14px 14px 0 0;padding:14px 16px calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px;max-height:94%;overflow-y:auto}
 #sheetHead{display:flex;justify-content:space-between;align-items:center}
-#sheetHead h2{margin:0;font-size:20px}
-#big{width:100%;aspect-ratio:3/4;max-height:46vh;object-fit:contain;background:#000;border-radius:10px}
-#bigNone{width:100%;aspect-ratio:3/4;max-height:46vh;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--muted);background:#000;border-radius:10px;padding:20px;line-height:1.35}
+#sheetHead h2{margin:0;font-size:18px;font-weight:600}
+#big{width:100%;aspect-ratio:3/4;max-height:40vh;object-fit:contain;background:#000;border-radius:10px}
+#bigNone{width:100%;aspect-ratio:3/4;max-height:40vh;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--muted);background:#000;border-radius:10px;padding:20px;line-height:1.4;font-size:15px}
+#note{width:100%;min-height:64px;resize:vertical;background:#2c2c2e;color:#fff;border:0;border-radius:10px;padding:10px 12px;font:inherit;font-size:15px;-webkit-user-select:text;user-select:text}
+#note::placeholder{color:#8e8e93}
 #strip{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}
-.tile{flex:0 0 auto;width:64px;height:85px;border-radius:8px;border:2px solid transparent;background:#333 center/cover no-repeat;color:var(--ink);font:inherit;font-weight:700;font-size:13px;cursor:pointer}
-.tile.sel{border-color:var(--ghost)}
-.tile.add{background:transparent;border:2px dashed #666;font-size:26px;font-weight:500}
-#sheetMsg{min-height:1.2em;color:var(--advice);font-size:15px;margin:0}
-@media (prefers-reduced-motion:reduce){#flash.on{animation:none}#frame,#tip{transition:none}}
+.tile{flex:0 0 auto;width:62px;height:83px;border-radius:6px;border:2px solid transparent;background:#333 center/cover no-repeat;color:#fff;font:inherit;font-size:13px;cursor:pointer}
+.tile.sel{border-color:var(--advice)}
+.tile.add{background:transparent;border:2px dashed #666;font-size:26px}
+#sheetMsg{min-height:1.2em;color:var(--advice);font-size:14px;margin:0}
+@media (prefers-reduced-motion:reduce){#flash.on{animation:none}}
 </style>
 </head>
 <body>
-<div id="finder">
-  <video id="video" playsinline muted autoplay></video>
-  <canvas id="overlay"></canvas>
+<video id="video" playsinline muted autoplay></video>
+<canvas id="overlay"></canvas>
+<div class="dim" id="dimTop"></div><div class="dim" id="dimBot"></div>
+
+<div id="hud">
+  <div id="dot" role="img" aria-label="Not ready"></div>
+  <div id="lines" aria-live="polite">
+    <div class="blk" id="poseBlk" hidden><div id="poseScore"></div><div id="poseTip"></div></div>
+    <div class="blk" id="frameBlk" hidden><div><span id="frameScore"></span><span class="tag" id="frameTag"></span></div><div id="frameTips"></div></div>
+    <div id="msg">Starting the camera…</div>
+  </div>
+</div>
+
+<div id="frame">
   <img id="preview" alt="Your photo">
-  <div id="frame"></div>
-  <div id="focus"></div>
-  <input id="expo" type="range" min="-2" max="2" step="0.1" value="0" aria-label="Brightness">
+  <div id="pill" hidden>
+    <button id="mirrorRef" aria-label="Mirror the reference" aria-pressed="false" hidden>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3v18" stroke-dasharray="2 2"/><path d="M9 6 3 18h6z"/><path d="M15 6l6 12h-6z"/></svg>
+    </button>
+    <button id="lock" aria-label="Lock outline to reference framing" aria-pressed="true" hidden></button>
+    <button id="torch" aria-label="Flash" aria-pressed="false" hidden>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
+    </button>
+  </div>
+  <div id="toast"></div>
+  <button id="refBtn" class="empty" aria-label="Reference photos">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span>Reference</span>
+  </button>
   <div id="zoom"></div>
   <div id="flash"></div>
 </div>
-<div id="bar">
-  <div id="tip">Starting the camera…</div>
+
+<div id="bottom">
   <div class="row" id="camRow">
-    <button class="side empty" id="refBtn" aria-label="Reference photos">Ref</button>
+    <button id="lastBtn" class="none" aria-label="Last photo"></button>
     <button id="shutter" aria-label="Take photo" disabled></button>
-    <button class="side" id="lastBtn" aria-label="Last photo" hidden></button>
+    <button id="flip" aria-label="Switch camera">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 0 0-14.6-4.5M4 13a8 8 0 0 0 14.6 4.5"/><path d="M5 3v4h4M19 21v-4h-4"/></svg>
+    </button>
   </div>
   <div class="btns" id="shotRow" hidden>
     <button class="btn" id="retake">Retake</button>
@@ -94,6 +132,7 @@ button:focus-visible{outline:3px solid var(--advice);outline-offset:3px}
     <div id="sheetHead"><h2>Reference</h2><button class="btn" id="done" style="padding:8px 18px">Done</button></div>
     <img id="big" alt="Selected reference" hidden>
     <div id="bigNone">No reference. The app uses its general framing tips.<br><br>Add a photo whose angle and pose you like, and the app will guide you to match it.</div>
+    <textarea id="note" placeholder="Vibe note: e.g. light, careless, mid-step, looking away" hidden></textarea>
     <div id="strip"></div>
     <p id="sheetMsg"></p>
     <div class="btns"><button class="btn danger" id="remove" hidden>Remove this reference</button></div>
@@ -101,15 +140,16 @@ button:focus-visible{outline:3px solid var(--advice);outline-offset:3px}
 </div>
 <input type="file" id="file" accept="image/*" multiple hidden>
 
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
-<script>
-(() => {
+<script type="module">
+import {FilesetResolver,PoseLandmarker} from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs';
+const WASM='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm';
+const M_LITE='https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task';
+const M_FULL='https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task';
+
 const $=id=>document.getElementById(id);
-const video=$('video'),overlay=$('overlay'),octx=overlay.getContext('2d');
-const tipEl=$('tip'),frameEl=$('frame'),shutter=$('shutter');
-const small=document.createElement('canvas');small.width=small.height=192;
-const sctx=small.getContext('2d',{willReadFrequently:true});
-let model=null,running=false,smooth=null,frozen=false,track=null,caps={},zoom=1,nativeZoom=false;
+const video=$('video'),overlay=$('overlay'),octx=overlay.getContext('2d'),frameEl=$('frame'),shutter=$('shutter');
+let fileset=null,live=null,still=null,running=false,frozen=false,stream=null,track=null,caps={},zoom=1,nativeZoom=false,front=false;
+let smooth=null,smoothW=null,lastTs=0;
 
 // ---------- storage ----------
 const DB=(()=>{let p;
@@ -118,281 +158,338 @@ const DB=(()=>{let p;
   const tx=async(mode,fn)=>{const db=await open();return new Promise((res,rej)=>{const t=db.transaction('refs',mode);const q=fn(t.objectStore('refs'));
     t.oncomplete=()=>res(q.result);t.onerror=()=>rej(t.error);});};
   return {all:()=>tx('readonly',s=>s.getAll()),put:r=>tx('readwrite',s=>s.put(r)),del:id=>tx('readwrite',s=>s.delete(id))};})();
-let refs=[],activeRef=null;
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
 const lsSet=(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}};
+let refs=[],activeRef=null;
+const saveRef=r=>DB.put({id:r.id,img:r.img,kp:r.kp,w:r.w,note:r.note||'',mode:r.mode,mirror:!!r.mirror,created:r.created}).catch(()=>{});
+
+// ---------- models ----------
+async function makeLM(path,mode){
+  if(!fileset)fileset=await FilesetResolver.forVisionTasks(WASM);
+  for(const delegate of ['GPU','CPU']){
+    try{return await PoseLandmarker.createFromOptions(fileset,{baseOptions:{modelAssetPath:path,delegate},runningMode:mode,numPoses:1});}
+    catch(e){if(delegate==='CPU')throw e;}
+  }
+}
+let stillP=null;const getStill=()=>stillP||(stillP=makeLM(M_FULL,'IMAGE'));
 
 // ---------- camera ----------
 async function startCamera(){
-  setTip('Starting the camera…','');$('errRow').hidden=true;
+  msg('Starting the camera…');$('errRow').hidden=true;
   try{
-    const stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1440}}});
+    if(stream)stream.getTracks().forEach(t=>t.stop());
+    stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:front?'user':'environment'},width:{ideal:1920},height:{ideal:1440}}});
     video.srcObject=stream;await video.play();
     track=stream.getVideoTracks()[0];caps=(track.getCapabilities&&track.getCapabilities())||{};
+    $('torch').hidden=!caps.torch;$('torch').classList.remove('on');updatePill();
     setupZoom();
-    if(!model){setTip('Loading the pose model…','');
-      model=await tf.loadGraphModel('https://raw.githubusercontent.com/vladmandic/human-models/main/models/movenet-lightning.json');
-      tf.tidy(()=>model.execute(tf.zeros([1,192,192,3],'int32')));}
-    shutter.disabled=false;setTip('Point the camera at her','');
+    if(!live){msg('Loading the pose model…');live=await makeLM(M_LITE,'VIDEO');}
+    shutter.disabled=false;msg('');resetStable();
     if(!running){running=true;requestAnimationFrame(loop);}
+    migrate();
   }catch(e){console.error(e);
-    setTip('Camera is blocked<small>Allow camera access for this page, then tap Try again.</small>','bad');$('errRow').hidden=false;}
+    msg('Camera or model failed to start.<br>Allow camera access, check your connection, then tap Try again.');$('errRow').hidden=false;}
 }
 $('retry').onclick=startCamera;
+$('flip').onclick=()=>{front=!front;smooth=null;smoothW=null;startCamera();};
+$('torch').onclick=()=>{const on=!$('torch').classList.contains('on');
+  track.applyConstraints({advanced:[{torch:on}]}).then(()=>{$('torch').classList.toggle('on',on);$('torch').setAttribute('aria-pressed',on);}).catch(()=>{});};
 
-// ---------- zoom ----------
-function setupZoom(){
-  const box=$('zoom');box.innerHTML='';
-  let levels=[1,2,3];
-  if(caps.zoom&&caps.zoom.max>1){nativeZoom=true;levels=[];
-    if(caps.zoom.min<=0.5)levels.push(0.5);levels.push(1);if(caps.zoom.max>=2)levels.push(2);if(caps.zoom.max>=3)levels.push(3);}
-  for(const z of levels){const b=document.createElement('button');b.textContent=(z===1?'1×':z+'');b.dataset.z=z;
-    b.onclick=e=>{e.stopPropagation();setZoom(z);};box.appendChild(b);}
-  setZoom(1);
+// ---------- screen <-> video ----------
+const fr=()=>frameEl.getBoundingClientRect();
+function applyVideoTransform(){const f=fr(),cx=f.left+f.width/2,cy=f.top+f.height/2,z=nativeZoom?1:zoom;
+  video.style.transformOrigin=`${cx}px ${cy}px`;video.style.transform=`${front?'scaleX(-1) ':''}scale(${z})`;}
+function mapper(){
+  const vw=video.videoWidth,vh=video.videoHeight,SW=innerWidth,SH=innerHeight,s0=Math.max(SW/vw,SH/vh),ox=(SW-vw*s0)/2,oy=(SH-vh*s0)/2;
+  const f=fr(),cx=f.left+f.width/2,cy=f.top+f.height/2,z=nativeZoom?1:zoom;
+  const v2s=(vx,vy)=>{if(front)vx=vw-vx;const bx=ox+vx*s0,by=oy+vy*s0;return {x:cx+(bx-cx)*z,y:cy+(by-cy)*z};};
+  const s2v=(sx,sy)=>{const bx=cx+(sx-cx)/z,by=cy+(sy-cy)/z;let vx=(bx-ox)/s0;const vy=(by-oy)/s0;if(front)vx=vw-vx;return {x:vx,y:vy};};
+  return {v2s,s2v,f,vw,vh};
 }
-function setZoom(z){
-  zoom=z;
-  if(nativeZoom){track.applyConstraints({advanced:[{zoom:z}]}).catch(()=>{});video.style.transform='';}
-  else video.style.transform=`scale(${z})`;
-  for(const b of $('zoom').children){const on=+b.dataset.z===z;b.classList.toggle('on',on);b.textContent=on?z+'×':(z===1&&!on?'1':b.dataset.z);}
-  for(const b of $('zoom').children){const v=+b.dataset.z;b.textContent=b.classList.contains('on')?v+'×':String(v);}
-}
+function setupZoom(){const box=$('zoom');box.innerHTML='';nativeZoom=false;let levels=[1,2,3];
+  if(caps.zoom&&caps.zoom.max>1){nativeZoom=true;levels=[];if(caps.zoom.min<=0.5)levels.push(0.5);levels.push(1);if(caps.zoom.max>=2)levels.push(2);if(caps.zoom.max>=3)levels.push(3);}
+  for(const z of levels){const b=document.createElement('button');b.dataset.z=z;b.onclick=e=>{e.stopPropagation();setZoom(z);};box.appendChild(b);}
+  setZoom(1);}
+function setZoom(z){zoom=z;if(nativeZoom)track.applyConstraints({advanced:[{zoom:z}]}).catch(()=>{});applyVideoTransform();
+  for(const b of $('zoom').children){const v=+b.dataset.z,on=v===z;b.classList.toggle('on',on);b.textContent=on?v+'×':String(v);}}
+addEventListener('resize',applyVideoTransform);
 
-// ---------- focus & exposure (only where the browser supports it) ----------
-let focusTimer;
-$('finder').addEventListener('click',e=>{
-  if(frozen||!track)return;
-  const canPoint=!!caps.pointsOfInterest, canExpo=!!caps.exposureCompensation;
-  if(!canPoint&&!canExpo)return;
-  const r=$('finder').getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
-  if(e.target.id==='expo')return;
-  const f=$('focus');f.style.left=(x-38)+'px';f.style.top=(y-38)+'px';f.style.display='block';
-  if(canPoint)track.applyConstraints({advanced:[{pointsOfInterest:[{x:x/r.width,y:y/r.height}]}]}).catch(()=>{});
-  const ex=$('expo');
-  if(canExpo){ex.min=caps.exposureCompensation.min;ex.max=caps.exposureCompensation.max;ex.step=caps.exposureCompensation.step||0.1;
-    ex.style.left=Math.min(x+20,r.width-80)+'px';ex.style.top=(y-14)+'px';ex.style.display='block';}
-  clearTimeout(focusTimer);focusTimer=setTimeout(hideFocus,3000);
-});
-$('expo').addEventListener('input',e=>{e.stopPropagation();clearTimeout(focusTimer);focusTimer=setTimeout(hideFocus,3000);
-  track.applyConstraints({advanced:[{exposureCompensation:+e.target.value}]}).catch(()=>{});});
-$('expo').addEventListener('click',e=>e.stopPropagation());
-function hideFocus(){$('focus').style.display='none';$('expo').style.display='none';}
+// ---------- landmarks ----------
+// MediaPipe: 0 nose, 2/5 eyes, 7/8 ears, 11/12 shoulders, 13/14 elbows, 15/16 wrists, 23/24 hips, 25/26 knees, 27/28 ankles, 29/30 heels, 31/32 toes (odd = her left)
+const SWAP=[0,4,5,6,1,2,3,8,7,10,9,12,11,14,13,16,15,18,17,20,19,22,21,24,23,26,25,28,27,30,29,32,31];
+const VIS=0.5,ok=p=>p&&p.v>VIS,inF=p=>ok(p)&&p.x>=0&&p.x<=1&&p.y>=0&&p.y<=1;
+const X=p=>p.x*3,Y=p=>p.y*4; // frame is 3:4 -> equal units
+const mid=(k,a,b)=>ok(k[a])&&ok(k[b])?{x:(k[a].x+k[b].x)/2,y:(k[a].y+k[b].y)/2,v:1}:(ok(k[a])?k[a]:(ok(k[b])?k[b]:{x:0,y:0,v:0}));
+const dist=(a,b)=>Math.hypot(X(a)-X(b),Y(a)-Y(b));
+const deg=r=>r*180/Math.PI;
+function mirrorKp(k){return k.map((p,i)=>{const s=k[SWAP[i]];return {x:1-s.x,y:s.y,v:s.v};});}
+function mirrorW(w){return w.map((p,i)=>{const s=w[SWAP[i]];return {x:-s.x,y:s.y,z:s.z};});}
+function elev(k,a,b){const dx=X(k[b])-X(k[a]),dy=Y(k[b])-Y(k[a]);return deg(Math.acos(Math.max(-1,Math.min(1,dy/Math.hypot(dx,dy)))));} // 0 = straight down, 180 = up
+function bend(k,a,b,c){const v1x=X(k[a])-X(k[b]),v1y=Y(k[a])-Y(k[b]),v2x=X(k[c])-X(k[b]),v2y=Y(k[c])-Y(k[b]);
+  return 180-deg(Math.acos(Math.max(-1,Math.min(1,(v1x*v2x+v1y*v2y)/(Math.hypot(v1x,v1y)*Math.hypot(v2x,v2y))))));} // 0 = straight
+const yaw=(w,l,r)=>deg(Math.atan2(w[l].z-w[r].z,w[l].x-w[r].x));
+function feat(k,w){
+  const sh=mid(k,11,12),hip=mid(k,23,24),nose=k[0];if(!ok(sh)||!ok(hip))return null;
+  const torso=dist(sh,hip),headTop=ok(nose)?nose.y-0.7*Math.max(sh.y-nose.y,0.02):sh.y-0.25;
+  const an=mid(k,27,28),full=inF(k[27])||inF(k[28]);
+  let foot=0;for(const i of [27,28,29,30,31,32])if(ok(k[i]))foot=Math.max(foot,k[i].y);
+  const f={k,sh,hip,cx:(sh.x+hip.x)/2,torso,headTop,full,foot,legRatio:full?(an.y-hip.y)/Math.max(hip.y-headTop,0.01):null};
+  const has=(...ix)=>ix.every(i=>ok(k[i]));
+  f.lean=deg(Math.atan2(X(sh)-X(hip),Y(hip)-Y(sh)));
+  f.hipDrop=has(23,24)?(Y(k[23])-Y(k[24]))/Math.max(Math.abs(X(k[23])-X(k[24])),0.05):null;
+  f.headRoll=has(2,5)?deg(Math.atan2(Y(k[2])-Y(k[5]),X(k[2])-X(k[5]))):null;
+  f.crossed=has(23,24,27,28)?Math.sign(k[27].x-k[28].x)!==Math.sign(k[23].x-k[24].x):null;
+  f.limb={};
+  for(const [n,a,b,c] of [['lArm',11,13,15],['rArm',12,14,16],['lLeg',23,25,27],['rLeg',24,26,28]])
+    f.limb[n]={elev:has(a,b)?elev(k,a,b):null,bend:has(a,b,c)?bend(k,a,b,c):null};
+  f.lFoot=has(29,31)?deg(Math.atan2(Y(k[31])-Y(k[29]),X(k[31])-X(k[29]))):null;
+  f.rFoot=has(30,32)?deg(Math.atan2(Y(k[32])-Y(k[30]),X(k[32])-X(k[30]))):null;
+  if(w){f.bodyYaw=yaw(w,11,12);f.headYaw=yaw(w,7,8);}else{f.bodyYaw=null;f.headYaw=null;}
+  return f;
+}
+const ad=(a,b)=>{let d=Math.abs(a-b)%360;return d>180?360-d:d;};
 
-// visible part of the video (object-fit: cover + digital zoom), in video pixels
-function visibleRect(){
-  const vw=video.videoWidth,vh=video.videoHeight,W=overlay.clientWidth,H=overlay.clientHeight;
-  const s=Math.max(W/vw,H/vh)*(nativeZoom?1:zoom),w=W/s,h=H/s;
-  return {x:(vw-w)/2,y:(vh-h)/2,w,h};
-}
+// ---------- reference view (mirror applied) ----------
+function refView(){if(!activeRef)return null;const r=activeRef;
+  if(!r._v||r._vm!==r.mirror){const kp=r.mirror?mirrorKp(r.kp):r.kp,w=r.w?(r.mirror?mirrorW(r.w):r.w):null;r._v={kp,w,f:feat(kp,w)};r._vm=r.mirror;}
+  return r._v;}
 
-// ---------- pose ----------
-async function runModel(canvas){
-  const out=tf.tidy(()=>model.execute(tf.browser.fromPixels(canvas).toInt().expandDims(0)));
-  const d=await out.data();out.dispose();return d;
-}
-async function detect(){
-  const vw=video.videoWidth,vh=video.videoHeight,s=Math.max(vw,vh);
-  const dw=192*vw/s,dh=192*vh/s,dx=(192-dw)/2,dy=(192-dh)/2;
-  sctx.fillStyle='#000';sctx.fillRect(0,0,192,192);sctx.drawImage(video,dx,dy,dw,dh);
-  const d=await runModel(small),r=visibleRect(),kp=[];
-  for(let i=0;i<17;i++){const py=(d[i*3]*192-dy)/dh*vh,px=(d[i*3+1]*192-dx)/dw*vw;
-    kp.push({x:(px-r.x)/r.w,y:(py-r.y)/r.h,s:d[i*3+2]});}
-  return kp;
-}
-async function poseFromImage(img){
-  const iw=img.naturalWidth,ih=img.naturalHeight;let cw=iw,ch=iw*4/3;if(ch>ih){ch=ih;cw=ih*3/4;}
-  const cx=(iw-cw)/2,cy=(ih-ch)/2;
-  const t=document.createElement('canvas');t.width=300;t.height=400;t.getContext('2d').drawImage(img,cx,cy,cw,ch,0,0,300,400);
-  const c=document.createElement('canvas');c.width=c.height=192;const g=c.getContext('2d');
-  g.fillStyle='#000';g.fillRect(0,0,192,192);g.drawImage(img,cx,cy,cw,ch,24,0,144,192);
-  const d=await runModel(c),kp=[];
-  for(let i=0;i<17;i++)kp.push({x:(d[i*3+1]*192-24)/144,y:d[i*3],s:d[i*3+2]});
-  return {thumb:t.toDataURL('image/jpeg',0.82),kp};
-}
-
-// ---------- geometry ----------
-// 0 nose 1-2 eyes 3-4 ears 5-6 shoulders 7-8 elbows 9-10 wrists 11-12 hips 13-14 knees 15-16 ankles
-const T=0.3,ok=p=>p&&p.s>T,inF=p=>ok(p)&&p.x>=0&&p.x<=1&&p.y>=0&&p.y<=1;
-const mid=(a,b)=>ok(a)&&ok(b)?{x:(a.x+b.x)/2,y:(a.y+b.y)/2,s:Math.min(a.s,b.s)}:(ok(a)?a:(ok(b)?b:{x:0,y:0,s:0}));
-const SEG=[[5,7],[7,9],[6,8],[8,10],[11,13],[13,15],[12,14],[14,16]];
-const LIMB=['left arm','left arm','right arm','right arm','left leg','left leg','right leg','right leg'];
-const MIRROR=[2,3,0,1,6,7,4,5];
-function feat(k){
-  const nose=k[0],sh=mid(k[5],k[6]),hip=mid(k[11],k[12]),ank=mid(k[15],k[16]);
-  if(!ok(sh)||!ok(hip))return null;
-  const headTop=ok(nose)?nose.y-0.6*Math.max(sh.y-nose.y,0.02):sh.y-0.25;
-  const torso=Math.hypot((sh.x-hip.x)*3,(sh.y-hip.y)*4);
-  const full=inF(k[15])||inF(k[16]);
-  const legRatio=full?(ank.y-hip.y)/Math.max(hip.y-headTop,0.01):null;
-  const ang=SEG.map(([a,b])=>ok(k[a])&&ok(k[b])?Math.atan2((k[b].y-k[a].y)*4,(k[b].x-k[a].x)*3):null);
-  return {sh,hip,cx:(sh.x+hip.x)/2,headTop,torso,full,legRatio,ang};
-}
-const adiff=(a,b)=>{let d=Math.abs(a-b)%(2*Math.PI);return d>Math.PI?2*Math.PI-d:d;};
-function poseDiff(L,R,mirror){
-  let sum=0,n=0,worst=-1,wv=0;
-  for(let i=0;i<8;i++){const j=mirror?MIRROR[i]:i,la=L.ang[i];let ra=R.ang[j];
-    if(la==null||ra==null)continue;if(mirror)ra=Math.PI-ra;
-    const d=adiff(la,ra);sum+=d;n++;if(d>wv){wv=d;worst=i;}}
-  return n<3?null:{mean:sum/n*180/Math.PI,worst,worstDeg:wv*180/Math.PI};
-}
-
-// ---------- coaching ----------
-const say=(id,text,sub,tone='advice')=>({id,text:sub?`${text}<small>${sub}</small>`:text,tone});
-function judgeGeneral(k){
-  const good=k.filter(ok).length,nose=k[0],sh=mid(k[5],k[6]),hip=mid(k[11],k[12]),knee=mid(k[13],k[14]),ank=mid(k[15],k[16]);
-  if(good<6||!ok(sh))return say('none','Point the camera at her','','');
-  const headTop=ok(nose)?nose.y-0.6*Math.max(sh.y-nose.y,0.02):sh.y-0.25,cx=ok(hip)?(sh.x+hip.x)/2:sh.x;
-  if(cx<0.18)return say('left','Turn the phone left','She’s at the edge of the frame');
-  if(cx>0.82)return say('right','Turn the phone right','She’s at the edge of the frame');
-  if(ok(nose)&&headTop<0)return say('head','Tilt up','The top of her head is cut off');
-  if(inF(k[15])||inF(k[16])){
-    const bodyH=ank.y-headTop,foot=ank.y+0.05*bodyH;
-    if(foot>1)return say('feet','Step back a little','Her feet are cut off');
-    if(bodyH<0.55)return say('small','Step closer','She’s too small in the frame');
-    if(headTop>0.15&&foot<0.93)return say('headroom','Tilt down','Too much empty space above her');
-    if(ok(hip)&&(ank.y-hip.y)/Math.max(hip.y-headTop,0.01)<0.88)return say('low','Lower the phone to her waist','Her legs will look longer');
-    return say('ok','Looks great. Take it!','','good');
+// ---------- scoring ----------
+const q=m=>Math.max(0,1-m*0.15); // quality from "how many thresholds off"
+function frameGeneral(L){
+  const v=[];const k=L.k;
+  if(L.cx<0.18)v.push(['left','Turn the phone left',.3]);
+  if(L.cx>0.82)v.push(['right','Turn the phone right',.3]);
+  if(ok(k[0])&&L.headTop<0)v.push(['head','Tilt up, her head is cut off',.35]);
+  if(L.full){const bodyH=L.foot-L.headTop;
+    if(L.foot>0.99)v.push(['feet','Feet are cropped, step back',.35]);
+    if(bodyH<0.55)v.push(['small','Step closer, she’s too small',.25]);
+    if(L.headTop>0.15&&L.foot<0.93)v.push(['headroom','Tilt down, too much space above',.15]);
+    if(L.legRatio<0.88)v.push(['low','Lower the phone to her waist',.15]);
+  }else{
+    const kn=mid(k,25,26);
+    if(ok(kn)&&kn.y>0.86&&kn.y<1.04)v.push(['knee','Don’t crop at the knees',.3]);
+    else if(L.hip.y>0.88&&L.hip.y<1.04&&!inF(kn))v.push(['waist','Don’t crop at the waist',.25]);
+    if(L.headTop>0.2)v.push(['headroom2','Tilt down, too much space above',.15]);
   }
-  if(ok(knee)&&knee.y>0.86&&knee.y<1.04)return say('knee','Don’t crop at the knees','Step back to show her feet, or get closer');
-  if(ok(hip)&&hip.y>0.88&&hip.y<1.04&&!inF(knee))return say('waist','Don’t crop at the waist','Step back a bit, or get closer');
-  if(headTop>0.2)return say('headroom2','Tilt down','Too much empty space above her');
-  return say('ok','Looks great. Take it!','','good');
+  v.sort((a,b)=>b[2]-a[2]);
+  return {score:Math.max(0,1-v.reduce((s,x)=>s+x[2],0)),tips:v.map(x=>({id:x[0],text:x[1]}))};
 }
-let mirrorPick=false;
-function judgeRef(k){
-  const R=activeRef.f;
-  if(k.filter(ok).length<6)return say('none','Point the camera at her','Line her up with the yellow ghost','');
-  const L=feat(k);if(!L)return say('torso','Get her shoulders and hips in the frame','');
-  const s=L.torso/R.torso;
-  if(s<0.85)return say('closer','Step closer','She’s smaller than in the reference');
-  if(s>1.18)return say('back','Step back','She’s bigger than in the reference');
-  const dy=L.sh.y-R.sh.y,dx=L.cx-R.cx;
-  if(dy>0.07)return say('tdown','Tilt down','Match the ghost’s height in the frame');
-  if(dy<-0.07)return say('tup','Tilt up','Match the ghost’s height in the frame');
-  if(dx>0.08)return say('tright','Turn the phone right','Move her onto the ghost');
-  if(dx<-0.08)return say('tleft','Turn the phone left','Move her onto the ghost');
-  if(R.legRatio!=null&&L.legRatio!=null){const d=L.legRatio-R.legRatio;
-    if(d<-0.12)return say('lower','Lower the phone','The reference is shot from lower');
-    if(d>0.12)return say('raise','Raise the phone','The reference is shot from higher');}
-  const a=poseDiff(L,R,false),b=poseDiff(L,R,true);
-  if(a&&b){if(mirrorPick?a.mean<b.mean-5:b.mean<a.mean-5)mirrorPick=!mirrorPick;}
-  else if(b)mirrorPick=true;else mirrorPick=false;
-  const p=mirrorPick?b:a;
-  if(p&&p.mean>22&&p.worstDeg>30)return say('pose'+p.worst,`Ask her to move her ${LIMB[p.worst]}`,'Like the ghost','advice');
-  return say('ok','Matches the reference. Take it!','','good');
+function frameRecreate(L,R){
+  const items=[],s=L.torso/R.torso,dy=L.sh.y-R.sh.y,dx=L.cx-R.cx;
+  items.push({m:Math.abs(Math.log(s))/Math.log(1.15),id:s<1?'closer':'back',text:s<1?'Step closer':'Step back'});
+  items.push({m:Math.abs(dy)/0.06,id:dy>0?'tdown':'tup',text:dy>0?'Tilt down':'Tilt up'});
+  items.push({m:Math.abs(dx)/0.07,id:dx>0?'tright':'tleft',text:dx>0?'Turn the phone right':'Turn the phone left'});
+  if(R.legRatio!=null&&L.legRatio!=null){const d=L.legRatio-R.legRatio;items.push({m:Math.abs(d)/0.12,id:d<0?'lower':'raise',text:d<0?'Lower the phone':'Raise the phone'});}
+  const score=items.reduce((a,i)=>a+q(i.m),0)/items.length;
+  return {score,tips:items.filter(i=>i.m>1).sort((a,b)=>b.m-a.m)};
+}
+const SIDE={l:'left',r:'right'};
+function poseCompare(L,R){
+  const items=[];
+  const add=(m,w,id,text,hl,prio)=>items.push({m,w,id,text,hl,prio});
+  if(L.crossed!=null&&R.crossed!=null)add(L.crossed===R.crossed?0:3,1.5,'cross',R.crossed?'Cross her legs':'Uncross her legs',[[23,25],[25,27],[24,26],[26,28]],1);
+  const turn=(Lv,Rv,thr,what,id,prio,hl)=>{if(Lv==null||Rv==null)return;const d=ad(Lv,Rv);
+    let t;if(Math.sign(Lv)!==Math.sign(Rv)&&Math.abs(Rv)>15)t=`Turn her ${what} the other way`;
+    else t=Math.abs(Lv)<Math.abs(Rv)?`Turn her ${what} more to the side`:`Turn her ${what} more toward the camera`;
+    add(d/thr,1.5,id,t,hl,prio);};
+  turn(L.bodyYaw,R.bodyYaw,20,'body','body',2,[[11,12]]);
+  if(L.lean!=null&&R.lean!=null){const d=R.lean-L.lean;add(Math.abs(d)/8,1,'lean',`Lean her upper body to your ${d>0?'right':'left'}`,[[11,23],[12,24]],3);}
+  if(L.hipDrop!=null&&R.hipDrop!=null){const d=R.hipDrop-L.hipDrop;add(Math.abs(d)/0.12,1,'hip',`${d>0?'Left':'Right'} hip slightly down`,[[23,24]],4);}
+  const limbs=[['lLeg','l',[[23,25],[25,27]],'leg',5],['rLeg','r',[[24,26],[26,28]],'leg',5],['lArm','l',[[11,13],[13,15]],'arm',6],['rArm','r',[[12,14],[14,16]],'arm',6]];
+  for(const [n,s,hl,kind,prio] of limbs){const a=L.limb[n],b=R.limb[n];
+    if(a.elev!=null&&b.elev!=null){const d=b.elev-a.elev;
+      add(Math.abs(d)/25,1,n+'e',kind==='arm'?(d>0?`Raise her ${SIDE[s]} arm higher`:`Lower her ${SIDE[s]} arm`):(d>0?`Move her ${SIDE[s]} leg out more`:`Bring her ${SIDE[s]} leg in`),hl,prio);}
+    if(a.bend!=null&&b.bend!=null){const d=b.bend-a.bend;
+      add(Math.abs(d)/25,1,n+'b',kind==='arm'?(d>0?`Bend her ${SIDE[s]} elbow more`:`Straighten her ${SIDE[s]} arm`):(d>0?`Bend her ${SIDE[s]} knee more`:`Straighten her ${SIDE[s]} leg`),hl,prio);}
+  }
+  turn(L.headYaw,R.headYaw,20,'head','headYaw',7,null);
+  if(L.headRoll!=null&&R.headRoll!=null){const d=ad(L.headRoll,R.headRoll);
+    add(d/10,0.7,'roll',Math.abs(R.headRoll)>Math.abs(L.headRoll)?'Tilt her head a little':'Straighten her head a little',null,8);}
+  for(const [lv,rv,s,hl] of [[L.lFoot,R.lFoot,'left',[[29,31]]],[L.rFoot,R.rFoot,'right',[[30,32]]]])
+    if(lv!=null&&rv!=null)add(ad(lv,rv)/35,0.6,'foot'+s,`Point her ${s} foot like the outline`,hl,9);
+  if(!items.length)return {score:0,tip:null};
+  const W=items.reduce((a,i)=>a+i.w,0),score=items.reduce((a,i)=>a+q(i.m)*i.w,0)/W;
+  const bad=items.filter(i=>i.m>1).sort((a,b)=>a.prio-b.prio||b.m-a.m);
+  return {score,tip:bad[0]||null};
 }
 
-// ---------- ui ----------
-let shownId='',candId='',candCount=0;
-function setTip(html,tone){tipEl.innerHTML=html;tipEl.className=tone;}
-function show(v){
-  if(v.id===candId)candCount++;else{candId=v.id;candCount=1;}
-  if(v.id!==shownId&&candCount>=8){shownId=v.id;setTip(v.text,v.tone);
-    const g=v.tone==='good';frameEl.classList.toggle('good',g);shutter.classList.toggle('good',g);}
+// ---------- ghost ----------
+const CHAINS=[[11,13],[13,15],[12,14],[14,16],[23,25],[25,27],[27,29],[27,31],[24,26],[26,28],[28,30],[28,32]];
+const lenEMA={};
+function retarget(Lk,Rk){
+  const lh=mid(Lk,23,24),rh=mid(Rk,23,24),ls=mid(Lk,11,12),rs=mid(Rk,11,12);
+  let sc=dist(ls,lh)/Math.max(dist(rs,rh),1e-3);lenEMA.sc=lenEMA.sc?lenEMA.sc*.8+sc*.2:sc;sc=lenEMA.sc;
+  const out=Rk.map(p=>({x:lh.x+(p.x-rh.x)*sc,y:lh.y+(p.y-rh.y)*sc,v:p.v}));
+  for(const [a,b] of CHAINS){
+    const rl=dist(Rk[a],Rk[b]);if(!rl)continue;
+    let len=ok(Lk[a])&&ok(Lk[b])?dist(Lk[a],Lk[b]):rl*sc;const key=a+'-'+b;lenEMA[key]=lenEMA[key]?lenEMA[key]*.85+len*.15:len;len=lenEMA[key];
+    const ux=(X(Rk[b])-X(Rk[a]))/rl,uy=(Y(Rk[b])-Y(Rk[a]))/rl;
+    out[b]={x:(X(out[a])+ux*len)/3,y:(Y(out[a])+uy*len)/4,v:Rk[b].v};
+  }
+  return out;
 }
-function skeleton(k,color,width,dash){
-  const W=overlay.clientWidth,H=overlay.clientHeight;
-  octx.strokeStyle=color;octx.lineWidth=width;octx.lineCap='round';octx.setLineDash(dash||[]);
-  for(const [a,b] of [[5,6],[11,12],[5,11],[6,12],...SEG])if(ok(k[a])&&ok(k[b])){
-    octx.beginPath();octx.moveTo(k[a].x*W,k[a].y*H);octx.lineTo(k[b].x*W,k[b].y*H);octx.stroke();}
-  if(ok(k[0])){octx.beginPath();octx.arc(k[0].x*W,k[0].y*H,Math.max(10,W*0.035),0,7);octx.stroke();}
-  octx.setLineDash([]);
+const P=(p,f)=>({x:f.left+p.x*f.width,y:f.top+p.y*f.height});
+function outline(k,f){
+  octx.strokeStyle='rgba(255,255,255,.92)';octx.lineWidth=1.6;octx.setLineDash([6,5]);octx.lineCap='round';octx.lineJoin='round';
+  octx.shadowColor='rgba(0,0,0,.5)';octx.shadowBlur=3;
+  if(ok(k[0])&&ok(k[11])&&ok(k[12])){const n=P(k[0],f),sw=Math.hypot((k[11].x-k[12].x)*f.width,(k[11].y-k[12].y)*f.height),rx=Math.max(sw*0.27,10),ry=rx*1.35;
+    octx.beginPath();octx.ellipse(n.x,n.y-ry*0.2,rx,ry,0,0,7);octx.stroke();}
+  if([11,12,24,23].every(i=>ok(k[i]))){octx.beginPath();[11,12,24,23].forEach((i,j)=>{const p=P(k[i],f);j?octx.lineTo(p.x,p.y):octx.moveTo(p.x,p.y);});octx.closePath();octx.stroke();}
+  for(const [a,b] of CHAINS)if(ok(k[a])&&ok(k[b])){const A=P(k[a],f),B=P(k[b],f);octx.beginPath();octx.moveTo(A.x,A.y);octx.lineTo(B.x,B.y);octx.stroke();}
+  octx.setLineDash([]);octx.shadowBlur=0;
 }
-function ghostKp(){
-  const R=activeRef.f,kp=activeRef.kp;if(!mirrorPick)return kp;
-  return kp.map((p,i)=>{const src=kp[[0,2,1,4,3,6,5,8,7,10,9,12,11,14,13,16,15][i]];return {x:2*R.cx-src.x,y:src.y,s:src.s};});
+
+// ---------- HUD with stability ----------
+let stableKey='',candKey='',candN=0,lastScoreT=0;
+const resetStable=()=>{stableKey='';candKey='';candN=0;};
+function msg(h){$('msg').innerHTML=h;$('msg').hidden=!h;}
+function hud(st){
+  const now=performance.now();
+  if(now-lastScoreT>200){lastScoreT=now;
+    $('frameScore').textContent=st.frame!=null?`Frame ${Math.round(st.frame*100)}%`:'Frame';
+    $('poseScore').textContent=st.pose!=null?`Pose: ${Math.round(st.pose*100)}%`:'';}
+  const key=st.key;if(key===candKey)candN++;else{candKey=key;candN=1;}
+  if(key!==stableKey&&candN>=6){stableKey=key;
+    $('frameTips').innerHTML=st.frameTips.map(t=>`<div>${t.text}</div>`).join('');
+    $('poseTip').textContent=st.poseTip?st.poseTip.text:'';
+    $('dot').classList.toggle('good',st.good);$('dot').setAttribute('aria-label',st.good?'Ready':'Not ready');
+    shown=st;}
+  $('frameTag').textContent=st.tag;$('poseBlk').hidden=!st.hasRef;$('frameBlk').hidden=false;
+}
+let shown=null;
+function evaluate(k,w){
+  const L=feat(k,w),R=refView();
+  if(!L||k.filter(ok).length<8)return {key:'none',frame:null,pose:null,frameTips:[{text:'Point the camera at her'}],poseTip:null,good:false,tag:'',hasRef:!!R};
+  let fr,tag;
+  if(R&&activeRef.mode==='static'){fr=frameRecreate(L,R.f);tag='recreate';}else{fr=frameGeneral(L);tag=R?'general':'';}
+  const tips=fr.tips.slice(0,2);let pose=null,poseTip=null;
+  if(R){const p=poseCompare(L,R.f);pose=p.score;if(!tips.length)poseTip=p.tip;}
+  const good=!tips.length&&(!R||pose>=0.85);
+  return {key:tips.map(t=>t.id).join(',')+'|'+(poseTip?poseTip.id:'')+'|'+good,frame:fr.score,pose,frameTips:tips,poseTip,good,tag,hasRef:!!R,L};
 }
 function draw(k){
-  const W=overlay.clientWidth,H=overlay.clientHeight,dpr=devicePixelRatio||1;
-  if(overlay.width!==Math.round(W*dpr)){overlay.width=Math.round(W*dpr);overlay.height=Math.round(H*dpr);}
+  const W=innerWidth,H=innerHeight,dpr=devicePixelRatio||1;
+  if(overlay.width!==Math.round(W*dpr)||overlay.height!==Math.round(H*dpr)){overlay.width=Math.round(W*dpr);overlay.height=Math.round(H*dpr);}
   octx.setTransform(dpr,0,0,dpr,0,0);octx.clearRect(0,0,W,H);
-  if(activeRef)skeleton(ghostKp(),'rgba(255,201,77,.75)',4,[8,7]);
-  if(k)skeleton(k,'rgba(255,255,255,.55)',2);
+  const R=refView();if(frozen||!R)return;const f=fr();
+  const dynamic=activeRef.mode==='dynamic';
+  if(dynamic){if(k&&ok(k[11])&&ok(k[23]))outline(retarget(k,R.kp),f);}else outline(R.kp,f);
+  if(k&&shown&&shown.poseTip&&shown.poseTip.hl){octx.strokeStyle='#8b5cf6';octx.lineWidth=5;octx.lineCap='round';
+    for(const [a,b] of shown.poseTip.hl)if(ok(k[a])&&ok(k[b])){const A=P(k[a],f),B=P(k[b],f);octx.beginPath();octx.moveTo(A.x,A.y);octx.lineTo(B.x,B.y);octx.stroke();}}
 }
-async function loop(){
-  if(!frozen&&model&&video.readyState>=2){
-    try{const k=await detect();
-      smooth=smooth?k.map((p,i)=>({x:smooth[i].x*.5+p.x*.5,y:smooth[i].y*.5+p.y*.5,s:smooth[i].s*.5+p.s*.5})):k;
-      show(activeRef?judgeRef(smooth):judgeGeneral(smooth));draw(smooth);
+function loop(){
+  if(!frozen&&live&&video.readyState>=2){
+    try{let ts=performance.now();if(ts<=lastTs)ts=lastTs+1;lastTs=ts;
+      const res=live.detectForVideo(video,ts);
+      if(res.landmarks&&res.landmarks[0]){
+        const M=mapper(),k=res.landmarks[0].map(p=>{const s=M.v2s(p.x*M.vw,p.y*M.vh);return {x:(s.x-M.f.left)/M.f.width,y:(s.y-M.f.top)/M.f.height,v:p.visibility??1};});
+        const w=res.worldLandmarks[0].map(p=>({x:front?-p.x:p.x,y:p.y,z:p.z}));
+        smooth=smooth?k.map((p,i)=>({x:smooth[i].x*.55+p.x*.45,y:smooth[i].y*.55+p.y*.45,v:smooth[i].v*.55+p.v*.45})):k;
+        smoothW=smoothW?w.map((p,i)=>({x:smoothW[i].x*.55+p.x*.45,y:smoothW[i].y*.55+p.y*.45,z:smoothW[i].z*.55+p.z*.45})):w;
+      }else{smooth=null;smoothW=null;}
+      hud(smooth?evaluate(smooth,smoothW):{key:'none',frame:null,pose:null,frameTips:[{text:'Point the camera at her'}],poseTip:null,good:false,tag:'',hasRef:!!activeRef});
+      draw(smooth);
     }catch(e){console.error(e);}
   }
   requestAnimationFrame(loop);
 }
 
-// ---------- references ----------
-function setActive(r){
-  activeRef=r;mirrorPick=false;lsSet('activeRef',r?r.id:null);shownId='';candCount=0;
-  const b=$('refBtn');
-  if(r){b.classList.add('active');b.classList.remove('empty');b.style.backgroundImage=`url(${r.thumb})`;b.textContent='';}
-  else{b.classList.remove('active');b.classList.add('empty');b.style.backgroundImage='';b.textContent='Ref';}
-  renderSheet();
+// ---------- pill: mirror reference, lock ----------
+const LOCK_ON='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+const LOCK_OFF='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg>';
+let toastT;function toast(t){const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('on'),1800);}
+function updatePill(){
+  const r=activeRef;$('mirrorRef').hidden=$('lock').hidden=!r;
+  if(r){const st=r.mode!=='dynamic';$('lock').innerHTML=st?LOCK_ON:LOCK_OFF;$('lock').classList.toggle('on',st);$('lock').setAttribute('aria-pressed',st);
+    $('lock').setAttribute('aria-label',st?'Outline locked: recreate the photo':'Outline follows her: copy the pose');
+    $('mirrorRef').classList.toggle('on',!!r.mirror);$('mirrorRef').setAttribute('aria-pressed',!!r.mirror);}
+  $('refBtn').classList.toggle('flipped',!!(r&&r.mirror));
+  $('pill').hidden=[...$('pill').children].every(b=>b.hidden);
 }
+$('lock').onclick=e=>{e.stopPropagation();const r=activeRef;if(!r)return;r.mode=r.mode==='dynamic'?'static':'dynamic';saveRef(r);updatePill();resetStable();
+  toast(r.mode==='static'?'Recreate photo: outline locked to the reference':'Copy pose: outline follows her');};
+$('mirrorRef').onclick=e=>{e.stopPropagation();const r=activeRef;if(!r)return;r.mirror=!r.mirror;saveRef(r);updatePill();resetStable();
+  toast(r.mirror?'Reference mirrored':'Reference not mirrored');};
+
+// ---------- references ----------
+async function analyze(src){ // src: image or canvas, any size -> 3:4 crop
+  const iw=src.naturalWidth||src.width,ih=src.naturalHeight||src.height;let cw=iw,ch=iw*4/3;if(ch>ih){ch=ih;cw=ih*3/4;}
+  const c=document.createElement('canvas');c.width=600;c.height=800;c.getContext('2d').drawImage(src,(iw-cw)/2,(ih-ch)/2,cw,ch,0,0,600,800);
+  const lm=await getStill(),res=lm.detect(c);
+  if(!res.landmarks||!res.landmarks[0])return null;
+  const kp=res.landmarks[0].map(p=>({x:p.x,y:p.y,v:p.visibility??1})),w=res.worldLandmarks[0].map(p=>({x:p.x,y:p.y,z:p.z}));
+  if(!feat(kp,w)||kp.filter(ok).length<10)return null;
+  return {img:c.toDataURL('image/jpeg',0.85),kp,w};
+}
+function setActive(r){activeRef=r;lsSet('activeRef',r?r.id:null);resetStable();lenEMA.sc=0;
+  const b=$('refBtn');
+  if(r){b.classList.remove('empty');b.style.backgroundImage=`url(${r.img})`;b.querySelector('svg').style.display='none';b.querySelector('span').textContent='';}
+  else{b.classList.add('empty');b.style.backgroundImage='';b.querySelector('svg').style.display='';b.querySelector('span').textContent='Reference';}
+  updatePill();renderSheet();}
 function renderSheet(){
   const strip=$('strip');strip.innerHTML='';
-  const none=document.createElement('button');none.className='tile'+(activeRef?'':' sel');none.textContent='None';
-  none.onclick=()=>setActive(null);strip.appendChild(none);
+  const none=document.createElement('button');none.className='tile'+(activeRef?'':' sel');none.textContent='None';none.onclick=()=>setActive(null);strip.appendChild(none);
   for(const r of refs){const t=document.createElement('button');t.className='tile'+(activeRef&&activeRef.id===r.id?' sel':'');
-    t.style.backgroundImage=`url(${r.thumb})`;t.setAttribute('aria-label','Reference photo');t.onclick=()=>setActive(r);strip.appendChild(t);}
-  const add=document.createElement('button');add.className='tile add';add.textContent='+';add.setAttribute('aria-label','Add reference photo');
-  add.onclick=()=>$('file').click();strip.appendChild(add);
-  $('big').hidden=!activeRef;$('bigNone').hidden=!!activeRef;$('remove').hidden=!activeRef;
-  if(activeRef)$('big').src=activeRef.thumb;
+    t.style.backgroundImage=`url(${r.img})`;t.setAttribute('aria-label','Reference photo');t.onclick=()=>setActive(r);strip.appendChild(t);}
+  const add=document.createElement('button');add.className='tile add';add.textContent='+';add.setAttribute('aria-label','Add reference photo');add.onclick=()=>$('file').click();strip.appendChild(add);
+  const a=!!activeRef;$('big').hidden=!a;$('bigNone').hidden=a;$('remove').hidden=!a;$('note').hidden=!a;
+  if(a){$('big').src=activeRef.img;$('big').style.transform=activeRef.mirror?'scaleX(-1)':'';$('note').value=activeRef.note||'';}
 }
-$('refBtn').onclick=()=>{$('sheetMsg').textContent='';renderSheet();$('sheet').hidden=false;};
+let noteT;$('note').addEventListener('input',()=>{if(!activeRef)return;activeRef.note=$('note').value;clearTimeout(noteT);noteT=setTimeout(()=>saveRef(activeRef),400);});
+$('refBtn').onclick=e=>{e.stopPropagation();$('sheetMsg').textContent='';renderSheet();$('sheet').hidden=false;};
 $('done').onclick=()=>{$('sheet').hidden=true;};
 $('sheet').onclick=e=>{if(e.target.id==='sheet')$('sheet').hidden=true;};
-$('remove').onclick=async()=>{if(!activeRef)return;const id=activeRef.id;
-  try{await DB.del(id);}catch(e){}refs=refs.filter(r=>r.id!==id);setActive(null);$('sheetMsg').textContent='Reference removed';};
+$('remove').onclick=async()=>{if(!activeRef)return;const id=activeRef.id;try{await DB.del(id);}catch(e){}
+  refs=refs.filter(r=>r.id!==id);setActive(null);$('sheetMsg').textContent='Reference removed';};
 $('file').onchange=async e=>{
   const files=[...e.target.files];e.target.value='';if(!files.length)return;
-  if(!model){$('sheetMsg').textContent='Wait for the camera to load, then try again';return;}
-  let added=0,failed=0,last=null;$('sheetMsg').textContent='Reading the pose…';
-  for(const f of files){
-    try{const img=new Image();const url=URL.createObjectURL(f);img.src=url;await img.decode();
-      const {thumb,kp}=await poseFromImage(img);URL.revokeObjectURL(url);
-      const ft=feat(kp);if(!ft||kp.filter(ok).length<7){failed++;continue;}
-      const r={id:Date.now()+'-'+Math.random().toString(36).slice(2,7),thumb,kp,f:ft,created:Date.now()};
-      try{await DB.put({id:r.id,thumb,kp,created:r.created});}catch(err){}
-      refs.push(r);added++;last=r;
-    }catch(err){console.error(err);failed++;}
-  }
+  let added=0,failed=0,last=null;$('sheetMsg').textContent='Reading the pose… (first time downloads a bigger model)';
+  for(const f of files){try{const img=new Image(),url=URL.createObjectURL(f);img.src=url;await img.decode();const a=await analyze(img);URL.revokeObjectURL(url);
+      if(!a){failed++;continue;}
+      const r={id:Date.now()+'-'+Math.random().toString(36).slice(2,7),...a,note:'',mode:'static',mirror:false,created:Date.now()};
+      await saveRef(r);refs.push(r);added++;last=r;}catch(err){console.error(err);failed++;}}
   if(last)setActive(last);else renderSheet();
   $('sheetMsg').textContent=failed?(added?`Added ${added}. ${failed} had no clear person, so they were skipped.`:'No clear person found. Use a photo where her shoulders and hips are visible.'):'';
 };
-(async()=>{try{const all=await DB.all();
-  refs=(all||[]).sort((a,b)=>a.created-b.created).map(r=>({...r,f:feat(r.kp)})).filter(r=>r.f);
-  const id=lsGet('activeRef');const a=refs.find(r=>r.id===id);if(a)setActive(a);}catch(e){console.error(e);}})();
+// load saved references; older ones (from the previous model) get re-analyzed once
+let pendingOld=[];
+(async()=>{try{const all=(await DB.all())||[];all.sort((a,b)=>a.created-b.created);
+  for(const r of all){if(r.w&&r.img)refs.push({...r,mode:r.mode||'static'});else if(r.thumb)pendingOld.push(r);}
+  const a=refs.find(r=>r.id===lsGet('activeRef'));if(a)setActive(a);}catch(e){console.error(e);}})();
+async function migrate(){if(!pendingOld.length)return;const list=pendingOld;pendingOld=[];
+  for(const o of list){try{const img=new Image();img.src=o.thumb;await img.decode();const a=await analyze(img);
+      if(a){const r={id:o.id,...a,note:'',mode:'static',mirror:false,created:o.created};await saveRef(r);refs.push(r);if(lsGet('activeRef')===o.id)setActive(r);}
+      else await DB.del(o.id);}catch(e){console.error(e);}}
+  refs.sort((a,b)=>a.created-b.created);renderSheet();}
 
 // ---------- snap ----------
 let lastBlob=null,lastUrl=null,lastCanvas=null,mirrored=false;
 function setShot(c,done){c.toBlob(b=>{lastBlob=b;if(lastUrl)URL.revokeObjectURL(lastUrl);lastUrl=URL.createObjectURL(b);
-  const lb=$('lastBtn');lb.hidden=false;lb.style.backgroundImage=`url(${lastUrl})`;$('preview').src=lastUrl;done&&done();},'image/jpeg',0.92);}
-function openPreview(){const p=$('preview');p.src=lastUrl;p.style.display='block';frozen=true;overlay.style.visibility='hidden';
-  frameEl.classList.remove('good');$('zoom').hidden=true;hideFocus();$('camRow').hidden=true;$('shotRow').hidden=false;setTip('Here’s your shot','');}
+  const lb=$('lastBtn');lb.classList.remove('none');lb.style.backgroundImage=`url(${lastUrl})`;$('preview').src=lastUrl;done&&done();},'image/jpeg',0.92);}
+function openPreview(){$('preview').style.display='block';frozen=true;
+  for(const id of ['zoom','refBtn','camRow','pill','poseBlk','frameBlk'])$(id).hidden=true;draw(null);
+  $('shotRow').hidden=false;msg('Here’s your shot');}
 shutter.onclick=()=>{
-  const r=visibleRect(),c=document.createElement('canvas');c.width=Math.round(r.w);c.height=Math.round(r.h);
-  c.getContext('2d').drawImage(video,r.x,r.y,r.w,r.h,0,0,c.width,c.height);
-  const f=$('flash');f.classList.remove('on');void f.offsetWidth;f.classList.add('on');
+  const M=mapper(),f=M.f,a=M.s2v(f.left,f.top),b=M.s2v(f.right,f.bottom);
+  const x0=Math.min(a.x,b.x),y0=Math.min(a.y,b.y),w=Math.abs(b.x-a.x),h=Math.abs(b.y-a.y);
+  const c=document.createElement('canvas');c.width=Math.round(w);c.height=Math.round(h);const g=c.getContext('2d');
+  if(front){g.translate(c.width,0);g.scale(-1,1);}g.drawImage(video,x0,y0,w,h,0,0,c.width,c.height);
+  const fl=$('flash');fl.classList.remove('on');void fl.offsetWidth;fl.classList.add('on');
   lastCanvas=c;mirrored=false;$('mirror').setAttribute('aria-pressed','false');setShot(c,openPreview);
 };
-$('mirror').onclick=()=>{
-  if(!lastCanvas)return;mirrored=!mirrored;$('mirror').setAttribute('aria-pressed',String(mirrored));
+$('mirror').onclick=()=>{if(!lastCanvas)return;mirrored=!mirrored;$('mirror').setAttribute('aria-pressed',String(mirrored));
   const m=document.createElement('canvas');m.width=lastCanvas.width;m.height=lastCanvas.height;const g=m.getContext('2d');
-  if(mirrored){g.translate(m.width,0);g.scale(-1,1);}g.drawImage(lastCanvas,0,0);setShot(m);
-};
+  if(mirrored){g.translate(m.width,0);g.scale(-1,1);}g.drawImage(lastCanvas,0,0);setShot(m);};
 $('lastBtn').onclick=()=>{if(lastUrl)openPreview();};
-$('retake').onclick=()=>{$('preview').style.display='none';frozen=false;overlay.style.visibility='visible';$('zoom').hidden=false;
-  $('shotRow').hidden=true;$('camRow').hidden=false;shownId='';candCount=0;};
-$('save').onclick=async()=>{
-  if(!lastBlob)return;
+$('retake').onclick=()=>{$('preview').style.display='none';frozen=false;for(const id of ['zoom','refBtn','camRow'])$(id).hidden=false;
+  updatePill();$('shotRow').hidden=true;msg('');resetStable();};
+$('save').onclick=async()=>{if(!lastBlob)return;
   const name='photo-'+new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')+'.jpg',file=new File([lastBlob],name,{type:'image/jpeg'});
-  if(navigator.canShare&&navigator.canShare({files:[file]})){
-    try{await navigator.share({files:[file]});return;}catch(e){if(e.name==='AbortError')return;}}
-  const a=document.createElement('a');a.href=lastUrl;a.download=name;document.body.appendChild(a);a.click();a.remove();
-};
+  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file]});return;}catch(e){if(e.name==='AbortError')return;}}
+  const a=document.createElement('a');a.href=lastUrl;a.download=name;document.body.appendChild(a);a.click();a.remove();};
 
 startCamera();
-})();
 </script>
 </body>
 </html>
