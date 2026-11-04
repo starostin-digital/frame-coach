@@ -8,47 +8,59 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gabarito:wght@500;700&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#000; --ink:#f5f3ee; --muted:#9c9a94; --advice:#ffc94d; --good:#6ee7a8; --bad:#ff7a6b;
-  color-scheme: dark;
-  box-sizing:border-box;
-  padding-top:env(safe-area-inset-top,0px);
-  padding-bottom:env(safe-area-inset-bottom,0px);
-}
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --bg:#000; --ink:#f5f3ee; } }
-:root[data-theme="dark"]{ --bg:#000; --ink:#f5f3ee; }
+:root{--bg:#000;--ink:#f5f3ee;--muted:#9c9a94;--advice:#ffc94d;--good:#6ee7a8;--bad:#ff7a6b;--ghost:#ffc94d;--sheet:#1c1c1e;
+  color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 *,*::before,*::after{box-sizing:inherit}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
 html,body{height:100%;margin:0}
-body{background:var(--bg);color:var(--ink);font-family:"Gabarito",system-ui,-apple-system,"Segoe UI",sans-serif;
-  display:flex;flex-direction:column;overflow:hidden;-webkit-user-select:none;user-select:none}
-#finder{position:relative;width:100%;max-width:100%;aspect-ratio:3/4;max-height:calc(100% - 190px);margin:0 auto;
-  background:#111;overflow:hidden;flex:0 0 auto}
-#finder video,#finder canvas,#preview{position:absolute;inset:0;width:100%;height:100%}
-#finder video{object-fit:cover}
+body{background:var(--bg);color:var(--ink);font-family:"Gabarito",system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;flex-direction:column;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+#finder{position:relative;width:100%;aspect-ratio:3/4;max-height:calc(100% - 200px);margin:0 auto;background:#111;overflow:hidden;flex:0 0 auto;touch-action:manipulation}
+#finder video,#overlay,#preview{position:absolute;inset:0;width:100%;height:100%}
+#finder video{object-fit:cover;transform-origin:center}
 #overlay{pointer-events:none}
 #frame{position:absolute;inset:0;border:3px solid transparent;transition:border-color .25s;pointer-events:none}
 #frame.good{border-color:var(--good)}
 #preview{object-fit:cover;display:none;-webkit-user-select:auto;user-select:auto;-webkit-touch-callout:default}
 #flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
-#flash.on{animation:fl .35s ease-out}
-@keyframes fl{0%{opacity:.85}100%{opacity:0}}
-#bar{flex:1 1 auto;display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;padding:8px 20px 12px;min-height:190px}
-#tip{font-size:clamp(20px,5.6vw,26px);font-weight:700;line-height:1.2;text-align:center;max-width:22ch;min-height:2.4em;
-  display:flex;align-items:center;justify-content:center;color:var(--muted);transition:color .2s}
-#tip.advice{color:var(--advice)} #tip.good{color:var(--good)} #tip.bad{color:var(--bad)}
+#flash.on{animation:fl .35s ease-out}@keyframes fl{0%{opacity:.85}100%{opacity:0}}
+#zoom{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);display:flex;gap:6px;background:rgba(0,0,0,.35);padding:4px;border-radius:999px}
+#zoom button{font:inherit;font-weight:700;font-size:12px;width:34px;height:34px;border-radius:50%;border:0;background:rgba(40,40,40,.8);color:var(--ink);cursor:pointer}
+#zoom button.on{color:var(--advice);font-size:13px;width:40px;height:40px;margin:-3px 0}
+#focus{position:absolute;width:76px;height:76px;border:1.5px solid var(--advice);pointer-events:none;display:none}
+#expo{position:absolute;display:none;width:120px;height:28px;transform:rotate(-90deg);transform-origin:center;accent-color:var(--advice)}
+#bar{flex:1 1 auto;display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;padding:6px 20px 10px;min-height:200px}
+#tip{font-size:clamp(20px,5.6vw,26px);font-weight:700;line-height:1.2;text-align:center;max-width:22ch;min-height:2.4em;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);transition:color .2s}
+#tip.advice{color:var(--advice)}#tip.good{color:var(--good)}#tip.bad{color:var(--bad)}
 #tip small{display:block;font-weight:500;font-size:.62em;color:var(--muted);margin-top:4px}
-.row{display:flex;gap:14px;align-items:center;justify-content:center;width:100%}
+.row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;width:100%;max-width:360px}
+.side{width:56px;height:56px;border-radius:10px;border:2px solid #555;background:#222 center/cover no-repeat;cursor:pointer;color:var(--ink);font:inherit;font-weight:700;font-size:12px;padding:0}
+#refBtn{justify-self:start}#lastBtn{justify-self:end}
+#refBtn.active{border-color:var(--ghost)}
+#refBtn.empty{border-style:dashed;background:transparent;color:var(--muted)}
 #shutter{width:76px;height:76px;border-radius:50%;border:4px solid var(--ink);background:transparent;padding:5px;cursor:pointer}
 #shutter::after{content:"";display:block;width:100%;height:100%;border-radius:50%;background:var(--ink);transition:transform .1s}
 #shutter:active::after{transform:scale(.88)}
-#shutter.good{border-color:var(--good)} #shutter.good::after{background:var(--good)}
+#shutter.good{border-color:var(--good)}#shutter.good::after{background:var(--good)}
 #shutter:disabled{opacity:.35}
+.btns{display:flex;gap:14px;justify-content:center}
 .btn{font:inherit;font-weight:700;font-size:17px;padding:14px 22px;border-radius:999px;border:2px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer}
 .btn.primary{background:var(--ink);color:#000}
+.btn[aria-pressed="true"]{border-color:var(--advice);color:var(--advice)}
+.btn.danger{border-color:var(--bad);color:var(--bad)}
 button:focus-visible{outline:3px solid var(--advice);outline-offset:3px}
 [hidden]{display:none!important}
-@media (prefers-reduced-motion: reduce){#flash.on{animation:none}#frame,#tip{transition:none}}
+/* reference sheet */
+#sheet{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;z-index:20}
+#sheetBox{background:var(--sheet);width:100%;border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px;max-height:92%}
+#sheetHead{display:flex;justify-content:space-between;align-items:center}
+#sheetHead h2{margin:0;font-size:20px}
+#big{width:100%;aspect-ratio:3/4;max-height:46vh;object-fit:contain;background:#000;border-radius:10px}
+#bigNone{width:100%;aspect-ratio:3/4;max-height:46vh;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--muted);background:#000;border-radius:10px;padding:20px;line-height:1.35}
+#strip{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}
+.tile{flex:0 0 auto;width:64px;height:85px;border-radius:8px;border:2px solid transparent;background:#333 center/cover no-repeat;color:var(--ink);font:inherit;font-weight:700;font-size:13px;cursor:pointer}
+.tile.sel{border-color:var(--ghost)}
+.tile.add{background:transparent;border:2px dashed #666;font-size:26px;font-weight:500}
+#sheetMsg{min-height:1.2em;color:var(--advice);font-size:15px;margin:0}
+@media (prefers-reduced-motion:reduce){#flash.on{animation:none}#frame,#tip{transition:none}}
 </style>
 </head>
 <body>
@@ -57,177 +69,326 @@ button:focus-visible{outline:3px solid var(--advice);outline-offset:3px}
   <canvas id="overlay"></canvas>
   <img id="preview" alt="Your photo">
   <div id="frame"></div>
+  <div id="focus"></div>
+  <input id="expo" type="range" min="-2" max="2" step="0.1" value="0" aria-label="Brightness">
+  <div id="zoom"></div>
   <div id="flash"></div>
 </div>
 <div id="bar">
   <div id="tip">Starting the camera…</div>
-  <div class="row" id="camRow"><button id="shutter" aria-label="Take photo" disabled></button></div>
-  <div class="row" id="shotRow" hidden>
+  <div class="row" id="camRow">
+    <button class="side empty" id="refBtn" aria-label="Reference photos">Ref</button>
+    <button id="shutter" aria-label="Take photo" disabled></button>
+    <button class="side" id="lastBtn" aria-label="Last photo" hidden></button>
+  </div>
+  <div class="btns" id="shotRow" hidden>
     <button class="btn" id="retake">Retake</button>
+    <button class="btn" id="mirror" aria-pressed="false">Mirror</button>
     <button class="btn primary" id="save">Save photo</button>
   </div>
-  <div class="row" id="errRow" hidden><button class="btn" id="retry">Try again</button></div>
+  <div class="btns" id="errRow" hidden><button class="btn" id="retry">Try again</button></div>
 </div>
+
+<div id="sheet" hidden>
+  <div id="sheetBox" role="dialog" aria-label="Reference photos">
+    <div id="sheetHead"><h2>Reference</h2><button class="btn" id="done" style="padding:8px 18px">Done</button></div>
+    <img id="big" alt="Selected reference" hidden>
+    <div id="bigNone">No reference. The app uses its general framing tips.<br><br>Add a photo whose angle and pose you like, and the app will guide you to match it.</div>
+    <div id="strip"></div>
+    <p id="sheetMsg"></p>
+    <div class="btns"><button class="btn danger" id="remove" hidden>Remove this reference</button></div>
+  </div>
+</div>
+<input type="file" id="file" accept="image/*" multiple hidden>
 
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
 <script>
 (() => {
-const $ = id => document.getElementById(id);
-const video=$('video'), overlay=$('overlay'), octx=overlay.getContext('2d');
-const tipEl=$('tip'), frameEl=$('frame'), shutter=$('shutter');
-const small=document.createElement('canvas'); small.width=small.height=192;
+const $=id=>document.getElementById(id);
+const video=$('video'),overlay=$('overlay'),octx=overlay.getContext('2d');
+const tipEl=$('tip'),frameEl=$('frame'),shutter=$('shutter');
+const small=document.createElement('canvas');small.width=small.height=192;
 const sctx=small.getContext('2d',{willReadFrequently:true});
-let model=null, running=false, smooth=null, frozen=false;
+let model=null,running=false,smooth=null,frozen=false,track=null,caps={},zoom=1,nativeZoom=false;
+
+// ---------- storage ----------
+const DB=(()=>{let p;
+  const open=()=>p||(p=new Promise((res,rej)=>{const r=indexedDB.open('framecoach',1);
+    r.onupgradeneeded=()=>r.result.createObjectStore('refs',{keyPath:'id'});r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);}));
+  const tx=async(mode,fn)=>{const db=await open();return new Promise((res,rej)=>{const t=db.transaction('refs',mode);const q=fn(t.objectStore('refs'));
+    t.oncomplete=()=>res(q.result);t.onerror=()=>rej(t.error);});};
+  return {all:()=>tx('readonly',s=>s.getAll()),put:r=>tx('readwrite',s=>s.put(r)),del:id=>tx('readwrite',s=>s.delete(id))};})();
+let refs=[],activeRef=null;
+const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
+const lsSet=(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}};
 
 // ---------- camera ----------
 async function startCamera(){
-  setTip('Starting the camera…','');
-  $('errRow').hidden=true;
+  setTip('Starting the camera…','');$('errRow').hidden=true;
   try{
-    const stream=await navigator.mediaDevices.getUserMedia({audio:false,
-      video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1440}}});
-    video.srcObject=stream; await video.play();
-    if(!model) await loadModel();
-    shutter.disabled=false;
+    const stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1440}}});
+    video.srcObject=stream;await video.play();
+    track=stream.getVideoTracks()[0];caps=(track.getCapabilities&&track.getCapabilities())||{};
+    setupZoom();
+    if(!model){setTip('Loading the pose model…','');
+      model=await tf.loadGraphModel('https://raw.githubusercontent.com/vladmandic/human-models/main/models/movenet-lightning.json');
+      tf.tidy(()=>model.execute(tf.zeros([1,192,192,3],'int32')));}
+    shutter.disabled=false;setTip('Point the camera at her','');
     if(!running){running=true;requestAnimationFrame(loop);}
-  }catch(e){
-    console.error(e);
-    setTip('Camera is blocked<small>Allow camera access for this page, then tap Try again.</small>','bad');
-    $('errRow').hidden=false;
-  }
+  }catch(e){console.error(e);
+    setTip('Camera is blocked<small>Allow camera access for this page, then tap Try again.</small>','bad');$('errRow').hidden=false;}
 }
 $('retry').onclick=startCamera;
 
-async function loadModel(){
-  setTip('Loading the pose model…','');
-  model=await tf.loadGraphModel('https://raw.githubusercontent.com/vladmandic/human-models/main/models/movenet-lightning.json');
-  tf.tidy(()=>model.execute(tf.zeros([1,192,192,3],'int32'))); // warm-up
+// ---------- zoom ----------
+function setupZoom(){
+  const box=$('zoom');box.innerHTML='';
+  let levels=[1,2,3];
+  if(caps.zoom&&caps.zoom.max>1){nativeZoom=true;levels=[];
+    if(caps.zoom.min<=0.5)levels.push(0.5);levels.push(1);if(caps.zoom.max>=2)levels.push(2);if(caps.zoom.max>=3)levels.push(3);}
+  for(const z of levels){const b=document.createElement('button');b.textContent=(z===1?'1×':z+'');b.dataset.z=z;
+    b.onclick=e=>{e.stopPropagation();setZoom(z);};box.appendChild(b);}
+  setZoom(1);
+}
+function setZoom(z){
+  zoom=z;
+  if(nativeZoom){track.applyConstraints({advanced:[{zoom:z}]}).catch(()=>{});video.style.transform='';}
+  else video.style.transform=`scale(${z})`;
+  for(const b of $('zoom').children){const on=+b.dataset.z===z;b.classList.toggle('on',on);b.textContent=on?z+'×':(z===1&&!on?'1':b.dataset.z);}
+  for(const b of $('zoom').children){const v=+b.dataset.z;b.textContent=b.classList.contains('on')?v+'×':String(v);}
 }
 
-// visible part of the video (object-fit: cover), in video pixels
+// ---------- focus & exposure (only where the browser supports it) ----------
+let focusTimer;
+$('finder').addEventListener('click',e=>{
+  if(frozen||!track)return;
+  const canPoint=!!caps.pointsOfInterest, canExpo=!!caps.exposureCompensation;
+  if(!canPoint&&!canExpo)return;
+  const r=$('finder').getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
+  if(e.target.id==='expo')return;
+  const f=$('focus');f.style.left=(x-38)+'px';f.style.top=(y-38)+'px';f.style.display='block';
+  if(canPoint)track.applyConstraints({advanced:[{pointsOfInterest:[{x:x/r.width,y:y/r.height}]}]}).catch(()=>{});
+  const ex=$('expo');
+  if(canExpo){ex.min=caps.exposureCompensation.min;ex.max=caps.exposureCompensation.max;ex.step=caps.exposureCompensation.step||0.1;
+    ex.style.left=Math.min(x+20,r.width-80)+'px';ex.style.top=(y-14)+'px';ex.style.display='block';}
+  clearTimeout(focusTimer);focusTimer=setTimeout(hideFocus,3000);
+});
+$('expo').addEventListener('input',e=>{e.stopPropagation();clearTimeout(focusTimer);focusTimer=setTimeout(hideFocus,3000);
+  track.applyConstraints({advanced:[{exposureCompensation:+e.target.value}]}).catch(()=>{});});
+$('expo').addEventListener('click',e=>e.stopPropagation());
+function hideFocus(){$('focus').style.display='none';$('expo').style.display='none';}
+
+// visible part of the video (object-fit: cover + digital zoom), in video pixels
 function visibleRect(){
-  const vw=video.videoWidth, vh=video.videoHeight, W=overlay.clientWidth, H=overlay.clientHeight;
-  const s=Math.max(W/vw,H/vh), w=W/s, h=H/s;
+  const vw=video.videoWidth,vh=video.videoHeight,W=overlay.clientWidth,H=overlay.clientHeight;
+  const s=Math.max(W/vw,H/vh)*(nativeZoom?1:zoom),w=W/s,h=H/s;
   return {x:(vw-w)/2,y:(vh-h)/2,w,h};
 }
 
 // ---------- pose ----------
+async function runModel(canvas){
+  const out=tf.tidy(()=>model.execute(tf.browser.fromPixels(canvas).toInt().expandDims(0)));
+  const d=await out.data();out.dispose();return d;
+}
 async function detect(){
-  const vw=video.videoWidth, vh=video.videoHeight, s=Math.max(vw,vh);
-  const dw=192*vw/s, dh=192*vh/s, dx=(192-dw)/2, dy=(192-dh)/2;
-  sctx.fillStyle='#000'; sctx.fillRect(0,0,192,192);
-  sctx.drawImage(video,dx,dy,dw,dh);
-  const out=tf.tidy(()=>model.execute(tf.browser.fromPixels(small).toInt().expandDims(0)));
-  const d=await out.data(); out.dispose();
-  const r=visibleRect(), kp=[];
-  for(let i=0;i<17;i++){
-    const py=(d[i*3]*192-dy)/dh*vh, px=(d[i*3+1]*192-dx)/dw*vw;
-    kp.push({x:(px-r.x)/r.w, y:(py-r.y)/r.h, s:d[i*3+2]});   // 0..1 = inside the visible frame
-  }
+  const vw=video.videoWidth,vh=video.videoHeight,s=Math.max(vw,vh);
+  const dw=192*vw/s,dh=192*vh/s,dx=(192-dw)/2,dy=(192-dh)/2;
+  sctx.fillStyle='#000';sctx.fillRect(0,0,192,192);sctx.drawImage(video,dx,dy,dw,dh);
+  const d=await runModel(small),r=visibleRect(),kp=[];
+  for(let i=0;i<17;i++){const py=(d[i*3]*192-dy)/dh*vh,px=(d[i*3+1]*192-dx)/dw*vw;
+    kp.push({x:(px-r.x)/r.w,y:(py-r.y)/r.h,s:d[i*3+2]});}
   return kp;
 }
+async function poseFromImage(img){
+  const iw=img.naturalWidth,ih=img.naturalHeight;let cw=iw,ch=iw*4/3;if(ch>ih){ch=ih;cw=ih*3/4;}
+  const cx=(iw-cw)/2,cy=(ih-ch)/2;
+  const t=document.createElement('canvas');t.width=300;t.height=400;t.getContext('2d').drawImage(img,cx,cy,cw,ch,0,0,300,400);
+  const c=document.createElement('canvas');c.width=c.height=192;const g=c.getContext('2d');
+  g.fillStyle='#000';g.fillRect(0,0,192,192);g.drawImage(img,cx,cy,cw,ch,24,0,144,192);
+  const d=await runModel(c),kp=[];
+  for(let i=0;i<17;i++)kp.push({x:(d[i*3+1]*192-24)/144,y:d[i*3],s:d[i*3+2]});
+  return {thumb:t.toDataURL('image/jpeg',0.82),kp};
+}
 
-// ---------- rules ----------
+// ---------- geometry ----------
 // 0 nose 1-2 eyes 3-4 ears 5-6 shoulders 7-8 elbows 9-10 wrists 11-12 hips 13-14 knees 15-16 ankles
-const T=0.3;
-const ok=p=>p.s>T;
-const inF=p=>ok(p)&&p.x>=0&&p.x<=1&&p.y>=0&&p.y<=1;
+const T=0.3,ok=p=>p&&p.s>T,inF=p=>ok(p)&&p.x>=0&&p.x<=1&&p.y>=0&&p.y<=1;
 const mid=(a,b)=>ok(a)&&ok(b)?{x:(a.x+b.x)/2,y:(a.y+b.y)/2,s:Math.min(a.s,b.s)}:(ok(a)?a:(ok(b)?b:{x:0,y:0,s:0}));
+const SEG=[[5,7],[7,9],[6,8],[8,10],[11,13],[13,15],[12,14],[14,16]];
+const LIMB=['left arm','left arm','right arm','right arm','left leg','left leg','right leg','right leg'];
+const MIRROR=[2,3,0,1,6,7,4,5];
+function feat(k){
+  const nose=k[0],sh=mid(k[5],k[6]),hip=mid(k[11],k[12]),ank=mid(k[15],k[16]);
+  if(!ok(sh)||!ok(hip))return null;
+  const headTop=ok(nose)?nose.y-0.6*Math.max(sh.y-nose.y,0.02):sh.y-0.25;
+  const torso=Math.hypot((sh.x-hip.x)*3,(sh.y-hip.y)*4);
+  const full=inF(k[15])||inF(k[16]);
+  const legRatio=full?(ank.y-hip.y)/Math.max(hip.y-headTop,0.01):null;
+  const ang=SEG.map(([a,b])=>ok(k[a])&&ok(k[b])?Math.atan2((k[b].y-k[a].y)*4,(k[b].x-k[a].x)*3):null);
+  return {sh,hip,cx:(sh.x+hip.x)/2,headTop,torso,full,legRatio,ang};
+}
+const adiff=(a,b)=>{let d=Math.abs(a-b)%(2*Math.PI);return d>Math.PI?2*Math.PI-d:d;};
+function poseDiff(L,R,mirror){
+  let sum=0,n=0,worst=-1,wv=0;
+  for(let i=0;i<8;i++){const j=mirror?MIRROR[i]:i,la=L.ang[i];let ra=R.ang[j];
+    if(la==null||ra==null)continue;if(mirror)ra=Math.PI-ra;
+    const d=adiff(la,ra);sum+=d;n++;if(d>wv){wv=d;worst=i;}}
+  return n<3?null:{mean:sum/n*180/Math.PI,worst,worstDeg:wv*180/Math.PI};
+}
 
-function judge(k){
-  const good=k.filter(ok).length;
-  const nose=k[0], sh=mid(k[5],k[6]), hip=mid(k[11],k[12]), knee=mid(k[13],k[14]), ank=mid(k[15],k[16]);
-  if(good<6||!ok(sh)) return {id:'none',text:'Point the camera at her',tone:''};
-
-  const headTop = ok(nose) ? nose.y-0.6*Math.max(sh.y-nose.y,0.02) : sh.y-0.25;
-  const cx = ok(hip)?(sh.x+hip.x)/2:sh.x;
-
-  if(cx<0.18) return {id:'left',text:'Turn the phone left<small>She’s at the edge of the frame</small>',tone:'advice'};
-  if(cx>0.82) return {id:'right',text:'Turn the phone right<small>She’s at the edge of the frame</small>',tone:'advice'};
-  if(ok(nose)&&headTop<0.0) return {id:'head',text:'Tilt up<small>The top of her head is cut off</small>',tone:'advice'};
-
-  const fullBody = inF(k[15])||inF(k[16]);
-  if(fullBody){
-    const bodyH=ank.y-headTop, foot=ank.y+0.05*bodyH;
-    if(foot>1.0) return {id:'feet',text:'Step back a little<small>Her feet are cut off</small>',tone:'advice'};
-    if(bodyH<0.55) return {id:'small',text:'Step closer<small>She’s too small in the frame</small>',tone:'advice'};
-    if(headTop>0.15&&foot<0.93) return {id:'headroom',text:'Tilt down<small>Too much empty space above her</small>',tone:'advice'};
-    if(ok(hip)){
-      const legRatio=(ank.y-hip.y)/Math.max(hip.y-headTop,0.01);
-      if(legRatio<0.88) return {id:'low',text:'Lower the phone to her waist<small>Her legs will look longer</small>',tone:'advice'};
-    }
-    return {id:'ok',text:'Looks great. Take it!',tone:'good'};
+// ---------- coaching ----------
+const say=(id,text,sub,tone='advice')=>({id,text:sub?`${text}<small>${sub}</small>`:text,tone});
+function judgeGeneral(k){
+  const good=k.filter(ok).length,nose=k[0],sh=mid(k[5],k[6]),hip=mid(k[11],k[12]),knee=mid(k[13],k[14]),ank=mid(k[15],k[16]);
+  if(good<6||!ok(sh))return say('none','Point the camera at her','','');
+  const headTop=ok(nose)?nose.y-0.6*Math.max(sh.y-nose.y,0.02):sh.y-0.25,cx=ok(hip)?(sh.x+hip.x)/2:sh.x;
+  if(cx<0.18)return say('left','Turn the phone left','She’s at the edge of the frame');
+  if(cx>0.82)return say('right','Turn the phone right','She’s at the edge of the frame');
+  if(ok(nose)&&headTop<0)return say('head','Tilt up','The top of her head is cut off');
+  if(inF(k[15])||inF(k[16])){
+    const bodyH=ank.y-headTop,foot=ank.y+0.05*bodyH;
+    if(foot>1)return say('feet','Step back a little','Her feet are cut off');
+    if(bodyH<0.55)return say('small','Step closer','She’s too small in the frame');
+    if(headTop>0.15&&foot<0.93)return say('headroom','Tilt down','Too much empty space above her');
+    if(ok(hip)&&(ank.y-hip.y)/Math.max(hip.y-headTop,0.01)<0.88)return say('low','Lower the phone to her waist','Her legs will look longer');
+    return say('ok','Looks great. Take it!','','good');
   }
-  // not full body: avoid cropping at joints
-  if(ok(knee)&&knee.y>0.86&&knee.y<1.04) return {id:'knee',text:'Don’t crop at the knees<small>Step back to show her feet, or get closer</small>',tone:'advice'};
-  if(ok(hip)&&hip.y>0.88&&hip.y<1.04&&!inF(knee)) return {id:'waist',text:'Don’t crop at the waist<small>Step back a bit, or get closer</small>',tone:'advice'};
-  if(headTop>0.2) return {id:'headroom2',text:'Tilt down<small>Too much empty space above her</small>',tone:'advice'};
-  return {id:'ok',text:'Looks great. Take it!',tone:'good'};
+  if(ok(knee)&&knee.y>0.86&&knee.y<1.04)return say('knee','Don’t crop at the knees','Step back to show her feet, or get closer');
+  if(ok(hip)&&hip.y>0.88&&hip.y<1.04&&!inF(knee))return say('waist','Don’t crop at the waist','Step back a bit, or get closer');
+  if(headTop>0.2)return say('headroom2','Tilt down','Too much empty space above her');
+  return say('ok','Looks great. Take it!','','good');
+}
+let mirrorPick=false;
+function judgeRef(k){
+  const R=activeRef.f;
+  if(k.filter(ok).length<6)return say('none','Point the camera at her','Line her up with the yellow ghost','');
+  const L=feat(k);if(!L)return say('torso','Get her shoulders and hips in the frame','');
+  const s=L.torso/R.torso;
+  if(s<0.85)return say('closer','Step closer','She’s smaller than in the reference');
+  if(s>1.18)return say('back','Step back','She’s bigger than in the reference');
+  const dy=L.sh.y-R.sh.y,dx=L.cx-R.cx;
+  if(dy>0.07)return say('tdown','Tilt down','Match the ghost’s height in the frame');
+  if(dy<-0.07)return say('tup','Tilt up','Match the ghost’s height in the frame');
+  if(dx>0.08)return say('tright','Turn the phone right','Move her onto the ghost');
+  if(dx<-0.08)return say('tleft','Turn the phone left','Move her onto the ghost');
+  if(R.legRatio!=null&&L.legRatio!=null){const d=L.legRatio-R.legRatio;
+    if(d<-0.12)return say('lower','Lower the phone','The reference is shot from lower');
+    if(d>0.12)return say('raise','Raise the phone','The reference is shot from higher');}
+  const a=poseDiff(L,R,false),b=poseDiff(L,R,true);
+  if(a&&b){if(mirrorPick?a.mean<b.mean-5:b.mean<a.mean-5)mirrorPick=!mirrorPick;}
+  else if(b)mirrorPick=true;else mirrorPick=false;
+  const p=mirrorPick?b:a;
+  if(p&&p.mean>22&&p.worstDeg>30)return say('pose'+p.worst,`Ask her to move her ${LIMB[p.worst]}`,'Like the ghost','advice');
+  return say('ok','Matches the reference. Take it!','','good');
 }
 
 // ---------- ui ----------
-let shownId='', candId='', candCount=0;
+let shownId='',candId='',candCount=0;
 function setTip(html,tone){tipEl.innerHTML=html;tipEl.className=tone;}
 function show(v){
-  if(v.id===candId) candCount++; else {candId=v.id;candCount=1;}
-  if(v.id!==shownId && candCount>=8){
-    shownId=v.id; setTip(v.text,v.tone);
-    const g=v.tone==='good'; frameEl.classList.toggle('good',g); shutter.classList.toggle('good',g);
-  }
+  if(v.id===candId)candCount++;else{candId=v.id;candCount=1;}
+  if(v.id!==shownId&&candCount>=8){shownId=v.id;setTip(v.text,v.tone);
+    const g=v.tone==='good';frameEl.classList.toggle('good',g);shutter.classList.toggle('good',g);}
 }
-const BONES=[[5,6],[5,7],[7,9],[6,8],[8,10],[5,11],[6,12],[11,12],[11,13],[13,15],[12,14],[14,16]];
+function skeleton(k,color,width,dash){
+  const W=overlay.clientWidth,H=overlay.clientHeight;
+  octx.strokeStyle=color;octx.lineWidth=width;octx.lineCap='round';octx.setLineDash(dash||[]);
+  for(const [a,b] of [[5,6],[11,12],[5,11],[6,12],...SEG])if(ok(k[a])&&ok(k[b])){
+    octx.beginPath();octx.moveTo(k[a].x*W,k[a].y*H);octx.lineTo(k[b].x*W,k[b].y*H);octx.stroke();}
+  if(ok(k[0])){octx.beginPath();octx.arc(k[0].x*W,k[0].y*H,Math.max(10,W*0.035),0,7);octx.stroke();}
+  octx.setLineDash([]);
+}
+function ghostKp(){
+  const R=activeRef.f,kp=activeRef.kp;if(!mirrorPick)return kp;
+  return kp.map((p,i)=>{const src=kp[[0,2,1,4,3,6,5,8,7,10,9,12,11,14,13,16,15][i]];return {x:2*R.cx-src.x,y:src.y,s:src.s};});
+}
 function draw(k){
   const W=overlay.clientWidth,H=overlay.clientHeight,dpr=devicePixelRatio||1;
-  if(overlay.width!==W*dpr){overlay.width=W*dpr;overlay.height=H*dpr;}
-  octx.setTransform(dpr,0,0,dpr,0,0); octx.clearRect(0,0,W,H);
-  octx.strokeStyle='rgba(255,255,255,.45)'; octx.lineWidth=2; octx.lineCap='round';
-  for(const [a,b] of BONES){ if(ok(k[a])&&ok(k[b])){octx.beginPath();octx.moveTo(k[a].x*W,k[a].y*H);octx.lineTo(k[b].x*W,k[b].y*H);octx.stroke();} }
-  octx.fillStyle='rgba(255,255,255,.8)';
-  for(const p of k) if(ok(p)){octx.beginPath();octx.arc(p.x*W,p.y*H,3,0,7);octx.fill();}
+  if(overlay.width!==Math.round(W*dpr)){overlay.width=Math.round(W*dpr);overlay.height=Math.round(H*dpr);}
+  octx.setTransform(dpr,0,0,dpr,0,0);octx.clearRect(0,0,W,H);
+  if(activeRef)skeleton(ghostKp(),'rgba(255,201,77,.75)',4,[8,7]);
+  if(k)skeleton(k,'rgba(255,255,255,.55)',2);
 }
 async function loop(){
-  if(!frozen && model && video.readyState>=2){
-    try{
-      const k=await detect();
-      smooth = smooth ? k.map((p,i)=>({x:smooth[i].x*0.5+p.x*0.5,y:smooth[i].y*0.5+p.y*0.5,s:smooth[i].s*0.5+p.s*0.5})) : k;
-      draw(smooth); show(judge(smooth));
+  if(!frozen&&model&&video.readyState>=2){
+    try{const k=await detect();
+      smooth=smooth?k.map((p,i)=>({x:smooth[i].x*.5+p.x*.5,y:smooth[i].y*.5+p.y*.5,s:smooth[i].s*.5+p.s*.5})):k;
+      show(activeRef?judgeRef(smooth):judgeGeneral(smooth));draw(smooth);
     }catch(e){console.error(e);}
   }
   requestAnimationFrame(loop);
 }
 
-// ---------- snap ----------
-let lastBlob=null, lastUrl=null;
-shutter.onclick=()=>{
-  const r=visibleRect(), c=document.createElement('canvas');
-  c.width=Math.round(r.w); c.height=Math.round(r.h);
-  c.getContext('2d').drawImage(video,r.x,r.y,r.w,r.h,0,0,c.width,c.height);
-  const f=$('flash'); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on');
-  c.toBlob(b=>{
-    lastBlob=b; if(lastUrl) URL.revokeObjectURL(lastUrl); lastUrl=URL.createObjectURL(b);
-    const p=$('preview'); p.src=lastUrl; p.style.display='block';
-    frozen=true; overlay.style.visibility='hidden'; frameEl.classList.remove('good');
-    $('camRow').hidden=true; $('shotRow').hidden=false;
-    setTip('Here’s your shot','');
-  },'image/jpeg',0.92);
-};
-$('retake').onclick=()=>{
-  $('preview').style.display='none'; frozen=false; overlay.style.visibility='visible';
-  $('shotRow').hidden=true; $('camRow').hidden=false; shownId=''; candCount=0;
-};
-let downloads=null;
-if(window.claude&&window.claude.use) window.claude.use('downloads').then(d=>downloads=d).catch(()=>{});
-$('save').onclick=async()=>{
-  if(!lastBlob) return;
-  if(!downloads){ setTip('Press and hold the photo to save it',''); return; }
-  try{
-    const ts=new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
-    await downloads.save({filename:`photo-${ts}.jpg`,data:lastBlob});
-    setTip('Saved','good');
-  }catch(e){
-    if(e&&e.code==='declined') setTip('Not saved','');
-    else setTip('Press and hold the photo to save it','');
+// ---------- references ----------
+function setActive(r){
+  activeRef=r;mirrorPick=false;lsSet('activeRef',r?r.id:null);shownId='';candCount=0;
+  const b=$('refBtn');
+  if(r){b.classList.add('active');b.classList.remove('empty');b.style.backgroundImage=`url(${r.thumb})`;b.textContent='';}
+  else{b.classList.remove('active');b.classList.add('empty');b.style.backgroundImage='';b.textContent='Ref';}
+  renderSheet();
+}
+function renderSheet(){
+  const strip=$('strip');strip.innerHTML='';
+  const none=document.createElement('button');none.className='tile'+(activeRef?'':' sel');none.textContent='None';
+  none.onclick=()=>setActive(null);strip.appendChild(none);
+  for(const r of refs){const t=document.createElement('button');t.className='tile'+(activeRef&&activeRef.id===r.id?' sel':'');
+    t.style.backgroundImage=`url(${r.thumb})`;t.setAttribute('aria-label','Reference photo');t.onclick=()=>setActive(r);strip.appendChild(t);}
+  const add=document.createElement('button');add.className='tile add';add.textContent='+';add.setAttribute('aria-label','Add reference photo');
+  add.onclick=()=>$('file').click();strip.appendChild(add);
+  $('big').hidden=!activeRef;$('bigNone').hidden=!!activeRef;$('remove').hidden=!activeRef;
+  if(activeRef)$('big').src=activeRef.thumb;
+}
+$('refBtn').onclick=()=>{$('sheetMsg').textContent='';renderSheet();$('sheet').hidden=false;};
+$('done').onclick=()=>{$('sheet').hidden=true;};
+$('sheet').onclick=e=>{if(e.target.id==='sheet')$('sheet').hidden=true;};
+$('remove').onclick=async()=>{if(!activeRef)return;const id=activeRef.id;
+  try{await DB.del(id);}catch(e){}refs=refs.filter(r=>r.id!==id);setActive(null);$('sheetMsg').textContent='Reference removed';};
+$('file').onchange=async e=>{
+  const files=[...e.target.files];e.target.value='';if(!files.length)return;
+  if(!model){$('sheetMsg').textContent='Wait for the camera to load, then try again';return;}
+  let added=0,failed=0,last=null;$('sheetMsg').textContent='Reading the pose…';
+  for(const f of files){
+    try{const img=new Image();const url=URL.createObjectURL(f);img.src=url;await img.decode();
+      const {thumb,kp}=await poseFromImage(img);URL.revokeObjectURL(url);
+      const ft=feat(kp);if(!ft||kp.filter(ok).length<7){failed++;continue;}
+      const r={id:Date.now()+'-'+Math.random().toString(36).slice(2,7),thumb,kp,f:ft,created:Date.now()};
+      try{await DB.put({id:r.id,thumb,kp,created:r.created});}catch(err){}
+      refs.push(r);added++;last=r;
+    }catch(err){console.error(err);failed++;}
   }
+  if(last)setActive(last);else renderSheet();
+  $('sheetMsg').textContent=failed?(added?`Added ${added}. ${failed} had no clear person, so they were skipped.`:'No clear person found. Use a photo where her shoulders and hips are visible.'):'';
+};
+(async()=>{try{const all=await DB.all();
+  refs=(all||[]).sort((a,b)=>a.created-b.created).map(r=>({...r,f:feat(r.kp)})).filter(r=>r.f);
+  const id=lsGet('activeRef');const a=refs.find(r=>r.id===id);if(a)setActive(a);}catch(e){console.error(e);}})();
+
+// ---------- snap ----------
+let lastBlob=null,lastUrl=null,lastCanvas=null,mirrored=false;
+function setShot(c,done){c.toBlob(b=>{lastBlob=b;if(lastUrl)URL.revokeObjectURL(lastUrl);lastUrl=URL.createObjectURL(b);
+  const lb=$('lastBtn');lb.hidden=false;lb.style.backgroundImage=`url(${lastUrl})`;$('preview').src=lastUrl;done&&done();},'image/jpeg',0.92);}
+function openPreview(){const p=$('preview');p.src=lastUrl;p.style.display='block';frozen=true;overlay.style.visibility='hidden';
+  frameEl.classList.remove('good');$('zoom').hidden=true;hideFocus();$('camRow').hidden=true;$('shotRow').hidden=false;setTip('Here’s your shot','');}
+shutter.onclick=()=>{
+  const r=visibleRect(),c=document.createElement('canvas');c.width=Math.round(r.w);c.height=Math.round(r.h);
+  c.getContext('2d').drawImage(video,r.x,r.y,r.w,r.h,0,0,c.width,c.height);
+  const f=$('flash');f.classList.remove('on');void f.offsetWidth;f.classList.add('on');
+  lastCanvas=c;mirrored=false;$('mirror').setAttribute('aria-pressed','false');setShot(c,openPreview);
+};
+$('mirror').onclick=()=>{
+  if(!lastCanvas)return;mirrored=!mirrored;$('mirror').setAttribute('aria-pressed',String(mirrored));
+  const m=document.createElement('canvas');m.width=lastCanvas.width;m.height=lastCanvas.height;const g=m.getContext('2d');
+  if(mirrored){g.translate(m.width,0);g.scale(-1,1);}g.drawImage(lastCanvas,0,0);setShot(m);
+};
+$('lastBtn').onclick=()=>{if(lastUrl)openPreview();};
+$('retake').onclick=()=>{$('preview').style.display='none';frozen=false;overlay.style.visibility='visible';$('zoom').hidden=false;
+  $('shotRow').hidden=true;$('camRow').hidden=false;shownId='';candCount=0;};
+$('save').onclick=async()=>{
+  if(!lastBlob)return;
+  const name='photo-'+new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')+'.jpg',file=new File([lastBlob],name,{type:'image/jpeg'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+    try{await navigator.share({files:[file]});return;}catch(e){if(e.name==='AbortError')return;}}
+  const a=document.createElement('a');a.href=lastUrl;a.download=name;document.body.appendChild(a);a.click();a.remove();
 };
 
 startCamera();
